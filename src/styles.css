@@ -3,7 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: #f7f9f9;
+    --foreground: #0F1419;
+    --primary: #1DA1F2;
+    --primary-hover: #1a8cd8;
+  }
+
   body {
-    @apply bg-[#f7f9f9] font-sans;
+    @apply bg-[var(--background)] font-sans;
   }
 }
