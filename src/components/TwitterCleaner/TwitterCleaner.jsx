@@ -3,35 +3,29 @@ import { Twitter } from 'lucide-react';
 
 const TwitterCleaner = () => {
   const handleLogin = () => {
-    // Login logic will be implemented later
+    // Twitter login logic will go here
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9f9] flex items-center justify-center px-4 py-12 font-['Inter']">
-      <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.05)] p-8">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#1DA1F2]/10">
-              <Twitter className="w-6 h-6 text-[#1DA1F2]" />
+    <div className="min-h-screen bg-[#f7f9f9] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] p-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Twitter className="h-5 w-5 text-[#1DA1F2]" />
+              <h1 className="text-xl font-bold text-[#0F1419]">Twitter Account Cleaner</h1>
             </div>
-            <div>
-              <h1 className="text-[20px] font-bold text-[#0F1419]">
-                Twitter Account Cleaner
-              </h1>
-              <p className="text-[15px] text-[#536471] mt-1">
-                Safely remove your tweets and replies with just one click
-              </p>
-            </div>
+            <p className="text-[#536471] text-sm">
+              Safely remove your tweets and replies with just one click
+            </p>
           </div>
 
-          {/* Login Button */}
           <button
             onClick={handleLogin}
-            className="w-full bg-[#1DA1F2] hover:bg-[#1a8cd8] transition-colors text-white font-semibold rounded-full px-4 py-3 flex items-center justify-center gap-2 text-[15px]"
+            className="flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white px-4 py-2 rounded-md font-medium transition-colors"
           >
-            <Twitter className="w-5 h-5" />
-            <span>Login with Twitter</span>
+            <Twitter className="h-4 w-4" />
+            Login with Twitter
           </button>
         </div>
       </div>
