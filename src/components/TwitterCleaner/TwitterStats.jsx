@@ -1,5 +1,5 @@
 import React from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Loader } from 'lucide-react';
 
 const TwitterStats = ({ 
