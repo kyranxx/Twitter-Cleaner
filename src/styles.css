@@ -4,31 +4,11 @@
 
 @layer base {
   :root {
-    --background: #F7F9F9;
-    --foreground: #0F1419;
-    --primary: #1DA1F2;
-    --primary-hover: #1a8cd8;
-    --warning-bg: #FEE2E2;
-    --warning-text: #991B1B;
-    --delete-button: #F04444;
-    --delete-button-hover: #DC3545;
-    --loading-bg: #F9A8B4;
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
   }
 
   body {
-    @apply bg-[var(--background)] font-sans text-[var(--foreground)];
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
+    @apply bg-[#F7F9F9] font-sans;
   }
 }
