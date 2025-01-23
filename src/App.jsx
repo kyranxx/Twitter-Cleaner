@@ -1,12 +1,10 @@
 import React from 'react';
-import TwitterCleaner from './components/TwitterCleaner';
+import TwitterCleaner from './components/TwitterCleaner/TwitterCleaner';
 
-const App = () => {
+function App() {
   return (
-    <div>
-      <TwitterCleaner />
-    </div>
+    <TwitterCleaner />
   );
-};
+}
 
 export default App;
