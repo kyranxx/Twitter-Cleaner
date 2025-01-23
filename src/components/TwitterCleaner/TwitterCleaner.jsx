@@ -27,56 +27,49 @@ const TwitterCleaner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F9F9] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-[0_2px_10px_rgba(0,0,0,0.08)]">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <Twitter className="h-5 w-5 text-[#1DA1F2]" />
-                <h1 className="text-xl font-bold text-[#0F1419]">Twitter Account Cleaner</h1>
-              </div>
-              <p className="text-[#536471] text-base">
-                Safely remove all your tweets and replies with just one click
-              </p>
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-8">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <Twitter className="h-6 w-6" />
+              <h1 className="text-2xl font-semibold">Twitter Account Cleaner</h1>
             </div>
-
-            {!isAuthenticated ? (
-              <button
-                onClick={handleLogin}
-                className="flex items-center justify-center gap-2 bg-[#15202B] hover:bg-[#0D1117] text-white px-4 py-3 rounded-md font-medium transition-colors w-full"
-              >
-                <Twitter className="h-5 w-5" />
-                Login with Twitter
-              </button>
-            ) : isLoading ? (
-              <div className="flex flex-col gap-4">
-                <div className="bg-[#FEE2E2] text-[#991B1B] p-4 rounded-md">
-                  <p className="font-medium mb-1">Warning</p>
-                  <p>This action will permanently delete all your tweets and replies. This cannot be undone.</p>
-                </div>
-                <div className="bg-[#F9A8B4] text-white p-3 rounded-md flex items-center justify-center">
-                  <span className="animate-pulse">Deleting... {progress}%</span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div className="bg-[#FEE2E2] text-[#991B1B] p-4 rounded-md">
-                  <p className="font-medium mb-1">Warning</p>
-                  <p>This action will permanently delete all your tweets and replies. This cannot be undone.</p>
-                </div>
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center justify-center gap-2 bg-[#F04444] hover:bg-[#DC3545] text-white px-4 py-3 rounded-md font-medium transition-colors"
-                >
-                  <Trash2 className="h-5 w-5" />
-                  Delete All Tweets
-                </button>
-              </div>
-            )}
+            <p className="text-[#536471] text-base">
+              Safely remove all your tweets and replies with just one click
+            </p>
           </div>
-        </CardContent>
-      </Card>
+
+          {!isAuthenticated ? (
+            <button
+              onClick={handleLogin}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 bg-[#15202B] hover:bg-[#1E2732] text-white px-4 py-3 rounded-xl font-medium transition-colors text-base disabled:opacity-50"
+            >
+              <Twitter className="h-5 w-5" />
+              Login with Twitter
+            </button>
+          ) : (
+            <button
+              onClick={handleDelete}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-medium transition-colors text-base disabled:opacity-50"
+            >
+              <Trash2 className="h-5 w-5" />
+              Delete All Tweets
+            </button>
+          )}
+
+          {isLoading && (
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-[#15202B] h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
