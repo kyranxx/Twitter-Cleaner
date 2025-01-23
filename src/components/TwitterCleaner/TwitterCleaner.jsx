@@ -1,6 +1,5 @@
 import React from 'react';
 import { Twitter } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 
 const TwitterCleaner = () => {
   const handleLogin = () => {
@@ -9,13 +8,13 @@ const TwitterCleaner = () => {
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white shadow-sm">
-        <CardContent className="p-8">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm">
+        <div className="p-8">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <Twitter className="h-6 w-6 text-[var(--primary)]" />
-                <h1 className="text-2xl font-bold text-[var(--foreground)]">
+                <Twitter className="h-6 w-6 text-[#1DA1F2]" />
+                <h1 className="text-2xl font-bold text-[#0F1419]">
                   Twitter Account Cleaner
                 </h1>
               </div>
@@ -26,14 +25,14 @@ const TwitterCleaner = () => {
 
             <button
               onClick={handleLogin}
-              className="flex items-center justify-center gap-2 bg-[#15202B] hover:bg-[#1a2834] text-white w-full px-4 py-3 rounded-lg font-medium transition-colors"
+              className="flex items-center justify-center gap-2 bg-[#0F1419] hover:bg-[#272C30] text-white w-full px-4 py-3 rounded-lg font-semibold transition-colors"
             >
               <Twitter className="h-5 w-5" />
               Login with Twitter
             </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
