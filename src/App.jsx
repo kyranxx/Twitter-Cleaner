@@ -1,9 +1,12 @@
+// src/App.jsx
 import React from 'react';
 import TwitterCleaner from './components/TwitterCleaner/TwitterCleaner';
 
 function App() {
   return (
-    <TwitterCleaner />
+    <div className="min-h-screen">
+      <TwitterCleaner />
+    </div>
   );
 }
 
