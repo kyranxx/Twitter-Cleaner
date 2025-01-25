@@ -3,7 +3,7 @@ import { Twitter } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
-const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'http://localhost:5173/callback';
+const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback';
 
 const TwitterCleaner = () => {
   const [loading, setLoading] = useState(false);
@@ -66,6 +66,7 @@ const TwitterCleaner = () => {
     } catch (err) {
       setError('Failed to initialize login');
       setLoading(false);
+      console.error(err);
     }
   };
 
@@ -88,6 +89,7 @@ const TwitterCleaner = () => {
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+      console.error(err);
     } finally {
       setLoading(false);
     }
