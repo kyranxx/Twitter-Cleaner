@@ -118,9 +118,9 @@ const TwitterCleaner = () => {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="twitter-login-button"
           >
-            <Twitter className="h-4 w-4" />
+            <Twitter />
             {loading ? 'Connecting...' : 'Login with Twitter'}
           </button>
         </div>
