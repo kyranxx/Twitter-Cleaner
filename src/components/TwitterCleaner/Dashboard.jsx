@@ -1,26 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut } from 'lucide-react';
+import { X, Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getUserTweets } from '../../lib/twitter-api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(null);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     tweets: 0,
     replies: 0
   });
 
-  // Check if user is authenticated
-  useEffect(() => {
-    const token = localStorage.getItem('twitter_token');
-    if (!token) {
-      console.log('No token found, redirecting to login');
-      navigate('/');
-      return;
+  const loadTweets = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('twitter_token');
+      
+      if (!token) {
+        navigate('/');
+        return;
+      }
+
+      const data = await getUserTweets(token);
+      
+      // Separate tweets and replies
+      const tweetStats = data.data.reduce((acc, tweet) => {
+        if (tweet.referenced_tweets?.some(ref => ref.type === 'replied_to')) {
+          acc.replies++;
+        } else {
+          acc.tweets++;
+        }
+        return acc;
+      }, { tweets: 0, replies: 0 });
+
+      setStats(tweetStats);
+    } catch (error) {
+      console.error('Failed to load tweets:', error);
+      setError('Failed to load tweets. Please try again.');
+      if (error.message.includes('401')) {
+        // Token expired
+        handleLogout();
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [navigate]);
+  };
+
+  // Load tweets on mount
+  useEffect(() => {
+    loadTweets();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('twitter_token');
@@ -55,8 +88,6 @@ const Dashboard = () => {
     }
   };
 
-  // ... rest of the component remains the same ...
-
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] p-6">
@@ -69,11 +100,15 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => window.location.reload()}
-                className="text-gray-600 hover:text-gray-800"
+                onClick={loadTweets}
                 disabled={loading}
+                className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
               >
-                <RefreshCw className="h-5 w-5" />
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-5 w-5" />
+                )}
               </button>
               <button 
                 onClick={handleLogout}
@@ -84,6 +119,13 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
@@ -92,7 +134,11 @@ const Dashboard = () => {
                   <X className="h-4 w-4" />
                   <span className="text-sm text-gray-600">Tweets</span>
                 </div>
-                <span className="text-lg font-semibold">{stats.tweets}</span>
+                <span className="text-lg font-semibold">
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : stats.tweets}
+                </span>
               </div>
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
@@ -101,7 +147,11 @@ const Dashboard = () => {
                   <MessageSquare className="h-4 w-4" />
                   <span className="text-sm text-gray-600">Replies</span>
                 </div>
-                <span className="text-lg font-semibold">{stats.replies}</span>
+                <span className="text-lg font-semibold">
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : stats.replies}
+                </span>
               </div>
             </div>
           </div>
@@ -145,7 +195,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button
                 onClick={() => handleDeleteTweets(false)}
-                disabled={deleting || loading}
+                disabled={deleting || loading || stats.tweets === 0}
                 className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="h-4 w-4" />
@@ -153,7 +203,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={handleDeleteReplies}
-                disabled={deleting || loading}
+                disabled={deleting || loading || stats.replies === 0}
                 className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="h-4 w-4" />
@@ -162,7 +212,7 @@ const Dashboard = () => {
             </div>
             <button
               onClick={() => handleDeleteTweets(true)}
-              disabled={deleting || loading}
+              disabled={deleting || loading || (stats.tweets === 0 && stats.replies === 0)}
               className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="h-4 w-4" />
