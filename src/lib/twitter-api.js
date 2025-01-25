@@ -1,7 +1,7 @@
 // Get user tweets with pagination
 export const getUserTweets = async (token) => {
   try {
-    const response = await fetch('https://api.twitter.com/2/users/me/tweets?max_results=100&tweet.fields=referenced_tweets', {
+    const response = await fetch('/api/twitter/tweets', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -64,11 +64,15 @@ export const batchDeleteTweets = async (tweetIds, token, onProgress) => {
       results.success++;
     } catch (error) {
       results.failed++;
+      console.error(`Failed to delete tweet ${tweetId}:`, error);
     }
     
     if (onProgress) {
       onProgress(results);
     }
+
+    // Add a small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   return results;
