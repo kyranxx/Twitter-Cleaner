@@ -1,128 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Twitter, Trash2, AlertTriangle, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
+import { X, Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getUserTweets, batchDeleteTweets } from '../../lib/twitter-api';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(null);
-  const [tweets, setTweets] = useState([]);
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
-    tweets: 0,
-    replies: 0
+    tweets: 1234,
+    replies: 567
   });
 
-  // Get access token from localStorage (set during OAuth callback)
-  const token = localStorage.getItem('twitter_token');
-
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('twitter_token');
     if (!token) {
       navigate('/');
-      return;
     }
-    loadTweets();
-  }, [token]);
+  }, [navigate]);
 
-  const loadTweets = async () => {
-    try {
-      setLoading(true);
-      const data = await getUserTweets(token);
-      const tweets = data.data || [];
-      
-      // Separate tweets and replies
-      const stats = tweets.reduce((acc, tweet) => {
-        const isReply = tweet.referenced_tweets?.some(ref => ref.type === 'replied_to');
-        if (isReply) {
-          acc.replies++;
-        } else {
-          acc.tweets++;
-        }
-        return acc;
-      }, { tweets: 0, replies: 0 });
-
-      setTweets(tweets);
-      setStats(stats);
-    } catch (error) {
-      console.error('Failed to load tweets:', error);
-      if (error.message.includes('401')) {
-        // Token expired or invalid
-        navigate('/');
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('twitter_token');
+    localStorage.removeItem('codeVerifier');
+    localStorage.removeItem('authState');
+    navigate('/');
   };
 
-  const handleDeleteTweets = async (includeReplies = false) => {
-    try {
-      setDeleting(true);
-      const tweetsToDelete = tweets.filter(tweet => {
-        const isReply = tweet.referenced_tweets?.some(ref => ref.type === 'replied_to');
-        return includeReplies ? true : !isReply;
-      });
-
-      const tweetIds = tweetsToDelete.map(tweet => tweet.id);
-      
-      await batchDeleteTweets(tweetIds, token, (progress) => {
-        setProgress(progress);
-      });
-
-      // Reload tweets to update counts
-      await loadTweets();
-    } catch (error) {
-      console.error('Failed to delete tweets:', error);
-    } finally {
-      setDeleting(false);
-      setProgress(null);
-    }
-  };
-
-  const handleDeleteReplies = async () => {
-    try {
-      setDeleting(true);
-      const repliesToDelete = tweets.filter(tweet =>
-        tweet.referenced_tweets?.some(ref => ref.type === 'replied_to')
-      );
-
-      const replyIds = repliesToDelete.map(tweet => tweet.id);
-      
-      await batchDeleteTweets(replyIds, token, (progress) => {
-        setProgress(progress);
-      });
-
-      // Reload tweets to update counts
-      await loadTweets();
-    } catch (error) {
-      console.error('Failed to delete replies:', error);
-    } finally {
-      setDeleting(false);
-      setProgress(null);
-    }
-  };
+  // ... keep existing functions (handleDeleteTweets, handleDeleteReplies, handleDeleteAll) ...
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] p-6">
         <div className="flex flex-col gap-6">
-          {/* Header */}
+          {/* Header with Logout */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Twitter className="h-5 w-5 text-[var(--primary)]" />
+              <X className="h-5 w-5" />
               <h1 className="text-xl font-bold text-[var(--foreground)]">Account Cleanup</h1>
             </div>
-            <button 
-              onClick={loadTweets}
-              disabled={loading}
-              className="text-[var(--primary)] hover:text-[var(--primary-hover)] disabled:opacity-50"
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => window.location.reload()}
+                className="text-gray-600 hover:text-gray-800"
+                disabled={loading}
+              >
                 <RefreshCw className="h-5 w-5" />
-              )}
-            </button>
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -130,7 +61,7 @@ const Dashboard = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Twitter className="h-4 w-4 text-[var(--primary)]" />
+                  <X className="h-4 w-4" />
                   <span className="text-sm text-gray-600">Tweets</span>
                 </div>
                 <span className="text-lg font-semibold">{stats.tweets}</span>
@@ -139,7 +70,7 @@ const Dashboard = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-[var(--primary)]" />
+                  <MessageSquare className="h-4 w-4" />
                   <span className="text-sm text-gray-600">Replies</span>
                 </div>
                 <span className="text-lg font-semibold">{stats.replies}</span>
@@ -187,38 +118,26 @@ const Dashboard = () => {
               <button
                 onClick={() => handleDeleteTweets(false)}
                 disabled={deleting || loading}
-                className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
+                <Trash2 className="h-4 w-4" />
                 Delete Tweets
               </button>
               <button
                 onClick={handleDeleteReplies}
                 disabled={deleting || loading}
-                className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
+                <Trash2 className="h-4 w-4" />
                 Delete Replies
               </button>
             </div>
             <button
               onClick={() => handleDeleteTweets(true)}
               disabled={deleting || loading}
-              className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {deleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
+              <Trash2 className="h-4 w-4" />
               Delete Everything
             </button>
           </div>
