@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Twitter } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { exchangeToken } from '../../lib/auth-utils';
 
 const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback';
@@ -15,9 +16,10 @@ const TwitterCleaner = () => {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
     const error = params.get('error');
+    const state = params.get('state');
     
     if (code) {
-      handleAuthCallback(code);
+      handleAuthCallback(code, state);
     } else if (error) {
       setError('Authentication failed: ' + error);
     }
@@ -70,22 +72,31 @@ const TwitterCleaner = () => {
     }
   };
 
-  const handleAuthCallback = async (code) => {
+  const handleAuthCallback = async (code, returnedState) => {
     try {
       setLoading(true);
       const verifier = localStorage.getItem('codeVerifier');
-      const state = localStorage.getItem('authState');
+      const originalState = localStorage.getItem('authState');
       
-      if (!verifier || !state) {
+      if (!verifier || !originalState) {
         throw new Error('Invalid authentication state');
       }
+
+      if (originalState !== returnedState) {
+        throw new Error('Invalid state parameter');
+      }
+
+      // Exchange the code for a token
+      const token = await exchangeToken(code, verifier, REDIRECT_URI);
+      
+      // Store the token
+      localStorage.setItem('twitter_token', token);
 
       // Clear stored auth data
       localStorage.removeItem('codeVerifier');
       localStorage.removeItem('authState');
 
-      // Here you would typically exchange the code for tokens
-      // For now, we'll just redirect to the main app
+      // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -94,6 +105,14 @@ const TwitterCleaner = () => {
       setLoading(false);
     }
   };
+
+  // If we already have a token, redirect to dashboard
+  useEffect(() => {
+    const token = localStorage.getItem('twitter_token');
+    if (token && location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [navigate, location]);
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
