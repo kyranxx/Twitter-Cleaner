@@ -29,4 +29,15 @@ const TwitterCleaner = () => {
 
           <button
             onClick={handleLogin}
-            className="flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white px-4 py-3 ro
+            className="flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white px-4 py-3 rounded-lg font-medium transition-colors w-full"
+          >
+            <Twitter className="h-4 w-4" />
+            Login with Twitter
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TwitterCleaner;
