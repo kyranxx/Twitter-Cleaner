@@ -1,0 +1,27 @@
+export const exchangeToken = async (code, codeVerifier, redirectUri) => {
+  try {
+    const response = await fetch('https://api.twitter.com/2/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: import.meta.env.VITE_TWITTER_CLIENT_ID,
+        code_verifier: codeVerifier,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+        code: code,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Token exchange failed');
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error('Token exchange error:', error);
+    throw error;
+  }
+};
