@@ -3,20 +3,22 @@ import { X, Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut } from 'luci
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(null);
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
-    tweets: 1234,
-    replies: 567
+    tweets: 0,
+    replies: 0
   });
 
+  // Check if user is authenticated
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem('twitter_token');
     if (!token) {
+      console.log('No token found, redirecting to login');
       navigate('/');
+      return;
     }
   }, [navigate]);
 
@@ -27,7 +29,33 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  // ... keep existing functions (handleDeleteTweets, handleDeleteReplies, handleDeleteAll) ...
+  const handleDeleteTweets = async (includeReplies = false) => {
+    try {
+      setDeleting(true);
+      // Delete implementation will go here
+      console.log('Deleting tweets, includeReplies:', includeReplies);
+    } catch (error) {
+      console.error('Failed to delete tweets:', error);
+    } finally {
+      setDeleting(false);
+      setProgress(null);
+    }
+  };
+
+  const handleDeleteReplies = async () => {
+    try {
+      setDeleting(true);
+      // Delete replies implementation will go here
+      console.log('Deleting replies');
+    } catch (error) {
+      console.error('Failed to delete replies:', error);
+    } finally {
+      setDeleting(false);
+      setProgress(null);
+    }
+  };
+
+  // ... rest of the component remains the same ...
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
