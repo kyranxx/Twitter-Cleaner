@@ -1,16 +1,14 @@
 export const exchangeToken = async (code, codeVerifier, redirectUri) => {
   try {
-    const response = await fetch('https://api.twitter.com/2/oauth2/token', {
+    const response = await fetch('/api/oauth', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        client_id: import.meta.env.VITE_TWITTER_CLIENT_ID,
-        code_verifier: codeVerifier,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-        code: code,
+      body: JSON.stringify({
+        code,
+        codeVerifier,
+        redirectUri,
       }),
     });
 
