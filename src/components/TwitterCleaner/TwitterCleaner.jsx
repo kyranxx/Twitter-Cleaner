@@ -143,4 +143,14 @@ const TwitterCleaner = () => {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <X
+              <XLogo className="h-4 w-4" />
+            )}
+            {loading ? 'Connecting...' : 'Sign in with X'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TwitterCleaner;
