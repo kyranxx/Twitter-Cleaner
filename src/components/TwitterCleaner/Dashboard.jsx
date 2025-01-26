@@ -16,17 +16,24 @@ const Dashboard = () => {
     replies: 0
   });
 
+  const validateToken = () => {
+    const token = localStorage.getItem('twitter_token');
+    if (!token) {
+      console.log('No token found, redirecting to login');
+      navigate('/');
+      return null;
+    }
+    return token;
+  };
+
   const loadTweets = async () => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('twitter_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
+      const token = validateToken();
+      if (!token) return;
 
+      console.log('Fetching tweets...');
       const data = await getUserTweets(token);
       
       if (!data.data) {
@@ -51,7 +58,8 @@ const Dashboard = () => {
       console.error('Failed to load tweets:', error);
       setError('Failed to load tweets. Please try again.');
       
-      if (error.message?.includes('401') || error.message?.includes('403')) {
+      if (error.message === 'auth_error') {
+        console.log('Auth error detected, redirecting to login');
         localStorage.removeItem('twitter_token');
         navigate('/');
       }
@@ -62,25 +70,22 @@ const Dashboard = () => {
 
   // Load tweets on mount
   useEffect(() => {
-    loadTweets();
+    const token = validateToken();
+    if (token) {
+      loadTweets();
+    }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('twitter_token');
-    localStorage.removeItem('codeVerifier');
-    localStorage.removeItem('authState');
     navigate('/');
   };
 
   const handleDeleteTweets = async (includeReplies = false) => {
     try {
       setDeleting(true);
-      const token = localStorage.getItem('twitter_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
+      const token = validateToken();
+      if (!token) return;
 
       const tweetsToDelete = tweets.filter(tweet => {
         const isReply = tweet.referenced_tweets?.some(ref => ref.type === 'replied_to');
@@ -97,6 +102,10 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to delete tweets:', error);
       setError('Failed to delete tweets. Please try again.');
+      
+      if (error.message === 'auth_error') {
+        navigate('/');
+      }
     } finally {
       setDeleting(false);
       setProgress(null);
@@ -106,12 +115,8 @@ const Dashboard = () => {
   const handleDeleteReplies = async () => {
     try {
       setDeleting(true);
-      const token = localStorage.getItem('twitter_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
+      const token = validateToken();
+      if (!token) return;
 
       const repliesToDelete = tweets.filter(tweet =>
         tweet.referenced_tweets?.some(ref => ref.type === 'replied_to')
@@ -127,6 +132,10 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to delete replies:', error);
       setError('Failed to delete replies. Please try again.');
+      
+      if (error.message === 'auth_error') {
+        navigate('/');
+      }
     } finally {
       setDeleting(false);
       setProgress(null);
@@ -166,8 +175,14 @@ const Dashboard = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm">
-              {error}
+            <div className="bg-red-50 border border-red-100 rounded-lg p-4">
+              <div className="flex gap-3 items-start">
+                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-medium text-red-800">Error</h3>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
           )}
 
