@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut, Loader2 } from 'lucide-react';
+import { Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUserTweets } from '../../lib/twitter-api';
+import XLogo from '../XLogo';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +28,10 @@ const Dashboard = () => {
 
       const data = await getUserTweets(token);
       
+      if (!data.data) {
+        throw new Error('No tweets data received');
+      }
+
       // Separate tweets and replies
       const tweetStats = data.data.reduce((acc, tweet) => {
         if (tweet.referenced_tweets?.some(ref => ref.type === 'replied_to')) {
@@ -41,9 +46,11 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to load tweets:', error);
       setError('Failed to load tweets. Please try again.');
-      if (error.message.includes('401')) {
-        // Token expired
-        handleLogout();
+      
+      // Check for auth errors and redirect if needed
+      if (error.message?.includes('401') || error.message?.includes('403')) {
+        localStorage.removeItem('twitter_token');
+        navigate('/');
       }
     } finally {
       setLoading(false);
@@ -62,32 +69,6 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const handleDeleteTweets = async (includeReplies = false) => {
-    try {
-      setDeleting(true);
-      // Delete implementation will go here
-      console.log('Deleting tweets, includeReplies:', includeReplies);
-    } catch (error) {
-      console.error('Failed to delete tweets:', error);
-    } finally {
-      setDeleting(false);
-      setProgress(null);
-    }
-  };
-
-  const handleDeleteReplies = async () => {
-    try {
-      setDeleting(true);
-      // Delete replies implementation will go here
-      console.log('Deleting replies');
-    } catch (error) {
-      console.error('Failed to delete replies:', error);
-    } finally {
-      setDeleting(false);
-      setProgress(null);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] p-6">
@@ -95,7 +76,7 @@ const Dashboard = () => {
           {/* Header with Logout */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <X className="h-5 w-5" />
+              <XLogo className="h-5 w-5" />
               <h1 className="text-xl font-bold text-[var(--foreground)]">Account Cleanup</h1>
             </div>
             <div className="flex items-center gap-2">
@@ -131,8 +112,8 @@ const Dashboard = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <X className="h-4 w-4" />
-                  <span className="text-sm text-gray-600">Tweets</span>
+                  <XLogo className="h-4 w-4" />
+                  <span className="text-sm text-gray-600">Posts</span>
                 </div>
                 <span className="text-lg font-semibold">
                   {loading ? (
@@ -156,26 +137,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Progress */}
-          {progress && (
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-600">Deleting...</span>
-                  <span className="text-sm font-medium text-blue-600">
-                    {progress.success} / {progress.total}
-                  </span>
-                </div>
-                <div className="w-full bg-blue-100 rounded-full h-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(progress.success / progress.total) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Warning */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -183,7 +144,7 @@ const Dashboard = () => {
               <div className="flex flex-col gap-2">
                 <h3 className="font-medium text-yellow-800">Warning</h3>
                 <p className="text-sm text-yellow-700">
-                  This action is irreversible. Once deleted, your tweets and replies cannot be recovered. 
+                  This action is irreversible. Once deleted, your posts and replies cannot be recovered. 
                   Make sure you want to proceed before clicking delete.
                 </p>
               </div>
@@ -199,7 +160,7 @@ const Dashboard = () => {
                 className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="h-4 w-4" />
-                Delete Tweets
+                Delete Posts
               </button>
               <button
                 onClick={handleDeleteReplies}
