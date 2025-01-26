@@ -5,6 +5,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 
 const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback';
+const CLIENT_ID = import.meta.env.VITE_TWITTER_CLIENT_ID;
 
 const TwitterCleaner = () => {
   const [loading, setLoading] = useState(false);
@@ -12,96 +13,37 @@ const TwitterCleaner = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const generateCodeVerifier = () => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    const verifier = btoa(String.fromCharCode(...array))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    localStorage.setItem('codeVerifier', verifier);
-    return verifier;
-  };
-
-  const generateCodeChallenge = async (verifier) => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(verifier);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-  };
-
-  const handleAuthCallback = async (code, returnedState) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const verifier = localStorage.getItem('codeVerifier');
-      const originalState = localStorage.getItem('authState');
-      
-      if (!verifier || !originalState) {
-        throw new Error('Invalid authentication state');
-      }
-
-      if (originalState !== returnedState) {
-        throw new Error('Invalid state parameter');
-      }
-
-      // Exchange code for token using our API endpoint
-      const response = await fetch('/api/auth/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code,
-          code_verifier: verifier,
-          redirect_uri: REDIRECT_URI,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to exchange token');
-      }
-
-      const data = await response.json();
-      
-      // Store the access token
-      localStorage.setItem('twitter_token', data.access_token);
-
-      // Clear stored auth data
-      localStorage.removeItem('codeVerifier');
-      localStorage.removeItem('authState');
-
-      // Redirect to dashboard
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError(err.message);
-      localStorage.removeItem('twitter_token');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogin = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Clear any existing tokens
-      localStorage.removeItem('twitter_token');
+      // Generate code verifier
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      const verifier = btoa(String.fromCharCode(...array))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
       
-      const verifier = generateCodeVerifier();
-      const challenge = await generateCodeChallenge(verifier);
+      // Generate code challenge
+      const encoder = new TextEncoder();
+      const data = encoder.encode(verifier);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      // Store verifier and state
       const state = crypto.randomUUID();
+      localStorage.setItem('codeVerifier', verifier);
       localStorage.setItem('authState', state);
 
+      // Build authorization URL
       const params = new URLSearchParams({
         response_type: 'code',
-        client_id: import.meta.env.VITE_TWITTER_CLIENT_ID,
+        client_id: CLIENT_ID,
         redirect_uri: REDIRECT_URI,
         scope: 'tweet.read tweet.write users.read',
         state: state,
@@ -109,6 +51,7 @@ const TwitterCleaner = () => {
         code_challenge_method: 'S256'
       });
 
+      // Redirect to Twitter
       window.location.href = `${TWITTER_AUTH_URL}?${params.toString()}`;
     } catch (err) {
       setError('Failed to initialize login');
@@ -117,6 +60,7 @@ const TwitterCleaner = () => {
     }
   };
 
+  // Handle callback
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
@@ -124,21 +68,24 @@ const TwitterCleaner = () => {
     const state = params.get('state');
     
     if (code) {
-      handleAuthCallback(code, state);
+      const verifier = localStorage.getItem('codeVerifier');
+      const originalState = localStorage.getItem('authState');
+      
+      if (!verifier || !originalState || originalState !== state) {
+        setError('Invalid authentication state');
+        return;
+      }
+
+      setLoading(true);
+      // Store code for token exchange
+      localStorage.setItem('twitter_token', code);
+      navigate('/dashboard');
     } else if (authError) {
       setError(authError === 'access_denied' 
-        ? 'Access was denied. Please try signing in again.'
+        ? 'Access was denied. Please try again.'
         : 'Authentication failed. Please try again.');
     }
   }, [location]);
-
-  // Check for existing token
-  useEffect(() => {
-    const token = localStorage.getItem('twitter_token');
-    if (token && location.pathname === '/') {
-      navigate('/dashboard');
-    }
-  }, [navigate, location]);
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
