@@ -5,14 +5,12 @@ export default async function handler(req, res) {
 
   try {
     const { code, code_verifier, redirect_uri } = req.body;
-    const clientId = process.env.TWITTER_CLIENT_ID;
+    const clientId = process.env.VITE_TWITTER_CLIENT_ID;
 
-    console.log('Auth attempt with:', {
-      clientIdExists: !!clientId,
-      codeExists: !!code,
-      verifierExists: !!code_verifier,
-      redirect_uri
-    });
+    if (!clientId) {
+      console.error('Client ID not found in environment');
+      return res.status(500).json({ error: 'Configuration error' });
+    }
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -27,32 +25,25 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: params.toString()
+      body: params
     });
-
-    console.log('Twitter response status:', tokenResponse.status);
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('Twitter error response:', errorText);
-      
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: 'Unknown error' };
-      }
-      
-      return res.status(tokenResponse.status).json(errorData);
+      console.error('Twitter API error:', {
+        status: tokenResponse.status,
+        response: errorText
+      });
+      return res.status(tokenResponse.status).json({ 
+        error: 'Token exchange failed',
+        details: errorText
+      });
     }
 
     const data = await tokenResponse.json();
     return res.status(200).json(data);
   } catch (error) {
     console.error('Token exchange error:', error);
-    return res.status(500).json({ 
-      error: 'Failed to exchange token',
-      message: error.message 
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
