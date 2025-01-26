@@ -33,10 +33,69 @@ const TwitterCleaner = () => {
       .replace(/=+$/, '');
   };
 
+  const handleAuthCallback = async (code, returnedState) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const verifier = localStorage.getItem('codeVerifier');
+      const originalState = localStorage.getItem('authState');
+      
+      if (!verifier || !originalState) {
+        throw new Error('Invalid authentication state');
+      }
+
+      if (originalState !== returnedState) {
+        throw new Error('Invalid state parameter');
+      }
+
+      // Exchange code for token
+      const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: import.meta.env.VITE_TWITTER_CLIENT_ID,
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: REDIRECT_URI,
+          code_verifier: verifier,
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.json();
+        throw new Error(errorData.error_description || 'Failed to exchange token');
+      }
+
+      const data = await tokenResponse.json();
+      
+      // Store the access token
+      localStorage.setItem('twitter_token', data.access_token);
+
+      // Clear stored auth data
+      localStorage.removeItem('codeVerifier');
+      localStorage.removeItem('authState');
+
+      // Redirect to dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Auth error:', err);
+      setError(err.message);
+      localStorage.removeItem('twitter_token');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Clear any existing tokens
+      localStorage.removeItem('twitter_token');
+      
       const verifier = generateCodeVerifier();
       const challenge = await generateCodeChallenge(verifier);
       const state = crypto.randomUUID();
@@ -54,46 +113,12 @@ const TwitterCleaner = () => {
 
       window.location.href = `${TWITTER_AUTH_URL}?${params.toString()}`;
     } catch (err) {
-      setError('Failed to initialize login. Please try again.');
+      setError('Failed to initialize login');
       console.error('Login error:', err);
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleAuthCallback = async (code, returnedState) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const verifier = localStorage.getItem('codeVerifier');
-      const originalState = localStorage.getItem('authState');
-      
-      if (!verifier || !originalState) {
-        throw new Error('Invalid authentication state. Please try again.');
-      }
-
-      if (originalState !== returnedState) {
-        throw new Error('Invalid state parameter. Please try again.');
-      }
-
-      // Store the token
-      localStorage.setItem('twitter_token', code);
-
-      // Clear stored auth data
-      localStorage.removeItem('codeVerifier');
-      localStorage.removeItem('authState');
-
-      // Redirect to dashboard
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
-      console.error('Auth callback error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle OAuth callback
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
