@@ -1,7 +1,16 @@
+// Detailed error logging
+const logError = (error, context) => {
+  console.error(`Error in ${context}:`, {
+    message: error.message,
+    stack: error.stack,
+    context
+  });
+};
+
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(401).json({ error: 'No authorization header' });
+    return res.status(401).json({ error: 'No authorization header provided' });
   }
 
   const token = authHeader.split(' ')[1];
@@ -22,12 +31,17 @@ export default async function handler(req, res) {
       );
 
       if (!deleteResponse.ok) {
-        throw new Error('Failed to delete tweet');
+        const errorData = await deleteResponse.json();
+        logError(new Error('Tweet deletion failed'), {
+          status: deleteResponse.status,
+          data: errorData
+        });
+        return res.status(deleteResponse.status).json(errorData);
       }
 
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Failed to delete tweet:', error);
+      logError(error, 'Delete tweet error');
       return res.status(500).json({ error: error.message });
     }
   }
@@ -43,7 +57,12 @@ export default async function handler(req, res) {
       });
       
       if (!userResponse.ok) {
-        throw new Error('Failed to get user info');
+        const errorData = await userResponse.json();
+        logError(new Error('User fetch failed'), {
+          status: userResponse.status,
+          data: errorData
+        });
+        return res.status(userResponse.status).json(errorData);
       }
 
       const userData = await userResponse.json();
@@ -59,14 +78,23 @@ export default async function handler(req, res) {
       );
 
       if (!tweetsResponse.ok) {
-        throw new Error('Failed to fetch tweets');
+        const errorData = await tweetsResponse.json();
+        logError(new Error('Tweets fetch failed'), {
+          status: tweetsResponse.status,
+          data: errorData
+        });
+        return res.status(tweetsResponse.status).json(errorData);
       }
 
       const tweetsData = await tweetsResponse.json();
       return res.status(200).json(tweetsData);
     } catch (error) {
-      console.error('Twitter API error:', error);
-      return res.status(500).json({ error: error.message });
+      logError(error, 'Get tweets error');
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        details: error.message,
+        timestamp: new Date().toISOString()
+      });
     }
   }
 
