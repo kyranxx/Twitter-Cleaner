@@ -8,42 +8,57 @@ export default async function handler(req, res) {
     const clientId = process.env.VITE_TWITTER_CLIENT_ID;
 
     if (!clientId) {
-      console.error('Client ID not found in environment');
+      console.error('Missing client ID');
       return res.status(500).json({ error: 'Configuration error' });
     }
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      code_verifier: code_verifier,
-      grant_type: 'authorization_code',
-      code: code,
-      redirect_uri: redirect_uri
+    console.log('Token exchange attempt:', {
+      hasCode: !!code,
+      hasVerifier: !!code_verifier,
+      redirect_uri,
+      hasClientId: !!clientId
     });
 
-    const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+    const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: clientId,
+      code: code,
+      redirect_uri: redirect_uri,
+      code_verifier: code_verifier
+    });
+
+    const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: params
+      body: body.toString()
+    });
+
+    const responseText = await tokenResponse.text();
+    console.log('Twitter response:', {
+      status: tokenResponse.status,
+      response: responseText
     });
 
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('Twitter API error:', {
-        status: tokenResponse.status,
-        response: errorText
-      });
-      return res.status(tokenResponse.status).json({ 
-        error: 'Token exchange failed',
-        details: errorText
-      });
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+      } catch {
+        errorData = { error: 'Token exchange failed' };
+      }
+      return res.status(tokenResponse.status).json(errorData);
     }
 
-    const data = await tokenResponse.json();
+    const data = JSON.parse(responseText);
     return res.status(200).json(data);
   } catch (error) {
     console.error('Token exchange error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ 
+      error: 'Failed to exchange token',
+      message: error.message 
+    });
   }
 }
