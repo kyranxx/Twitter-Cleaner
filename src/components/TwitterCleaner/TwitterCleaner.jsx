@@ -7,7 +7,115 @@ const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback';
 
 const TwitterCleaner = () => {
-  // ... keep all the previous state and functions ...
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const generateCodeVerifier = () => {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const verifier = btoa(String.fromCharCode(...array))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    localStorage.setItem('codeVerifier', verifier);
+    return verifier;
+  };
+
+  const generateCodeChallenge = async (verifier) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  };
+
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const verifier = generateCodeVerifier();
+      const challenge = await generateCodeChallenge(verifier);
+      const state = crypto.randomUUID();
+      localStorage.setItem('authState', state);
+
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: import.meta.env.VITE_TWITTER_CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        scope: 'tweet.read tweet.write users.read',
+        state: state,
+        code_challenge: challenge,
+        code_challenge_method: 'S256'
+      });
+
+      window.location.href = `${TWITTER_AUTH_URL}?${params.toString()}`;
+    } catch (err) {
+      setError('Failed to initialize login. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthCallback = async (code, returnedState) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const verifier = localStorage.getItem('codeVerifier');
+      const originalState = localStorage.getItem('authState');
+      
+      if (!verifier || !originalState) {
+        throw new Error('Invalid authentication state. Please try again.');
+      }
+
+      if (originalState !== returnedState) {
+        throw new Error('Invalid state parameter. Please try again.');
+      }
+
+      // Store the token
+      localStorage.setItem('twitter_token', code);
+
+      // Clear stored auth data
+      localStorage.removeItem('codeVerifier');
+      localStorage.removeItem('authState');
+
+      // Redirect to dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
+      console.error('Auth callback error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    const authError = params.get('error');
+    const state = params.get('state');
+    
+    if (code) {
+      handleAuthCallback(code, state);
+    } else if (authError) {
+      setError(authError === 'access_denied' 
+        ? 'Access was denied. Please try signing in again.'
+        : 'Authentication failed. Please try again.');
+    }
+  }, [location]);
+
+  // Check for existing token
+  useEffect(() => {
+    const token = localStorage.getItem('twitter_token');
+    if (token && location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [navigate, location]);
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
@@ -29,11 +137,7 @@ const TwitterCleaner = () => {
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1">
                   <h3 className="font-medium text-red-800">Authentication Failed</h3>
-                  <p className="text-sm text-red-700">
-                    {error === 'access_denied' 
-                      ? 'Access was denied. Please try signing in again.'
-                      : error}
-                  </p>
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               </div>
             </div>
