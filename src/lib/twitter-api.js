@@ -1,16 +1,31 @@
 // Get user tweets with pagination
 export const getUserTweets = async (token) => {
   try {
+    console.log('Fetching tweets...');
     const response = await fetch('/api/twitter/tweets', {
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch tweets');
-    return await response.json();
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Tweet fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(errorData.error || 'Failed to fetch tweets');
+    }
+
+    const data = await response.json();
+    console.log('Tweets fetched successfully:', {
+      count: data.data?.length || 0
+    });
+    return data;
   } catch (error) {
-    console.error('Error fetching tweets:', error);
+    console.error('Error in getUserTweets:', error);
     throw error;
   }
 };
@@ -18,14 +33,19 @@ export const getUserTweets = async (token) => {
 // Delete a single tweet
 export const deleteTweet = async (tweetId, token) => {
   try {
-    const response = await fetch(`https://api.twitter.com/2/tweets/${tweetId}`, {
+    const response = await fetch(`/api/twitter/tweets?tweetId=${tweetId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
 
-    if (!response.ok) throw new Error('Failed to delete tweet');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete tweet');
+    }
+
     return true;
   } catch (error) {
     console.error('Error deleting tweet:', error);
@@ -36,13 +56,18 @@ export const deleteTweet = async (tweetId, token) => {
 // Get user profile
 export const getUserProfile = async (token) => {
   try {
-    const response = await fetch('https://api.twitter.com/2/users/me', {
+    const response = await fetch('/api/twitter/me', {
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch user profile');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch user profile');
+    }
+
     return await response.json();
   } catch (error) {
     console.error('Error fetching user profile:', error);
