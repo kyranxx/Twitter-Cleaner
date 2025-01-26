@@ -48,27 +48,25 @@ const TwitterCleaner = () => {
         throw new Error('Invalid state parameter');
       }
 
-      // Exchange code for token
-      const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+      // Exchange code for token using our API endpoint
+      const response = await fetch('/api/auth/token', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
-          client_id: import.meta.env.VITE_TWITTER_CLIENT_ID,
-          grant_type: 'authorization_code',
+        body: JSON.stringify({
           code,
-          redirect_uri: REDIRECT_URI,
           code_verifier: verifier,
+          redirect_uri: REDIRECT_URI,
         }),
       });
 
-      if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.json();
-        throw new Error(errorData.error_description || 'Failed to exchange token');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to exchange token');
       }
 
-      const data = await tokenResponse.json();
+      const data = await response.json();
       
       // Store the access token
       localStorage.setItem('twitter_token', data.access_token);
