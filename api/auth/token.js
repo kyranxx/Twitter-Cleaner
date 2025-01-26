@@ -5,63 +5,54 @@ export default async function handler(req, res) {
 
   try {
     const { code, code_verifier, redirect_uri } = req.body;
+    const clientId = process.env.TWITTER_CLIENT_ID;
 
-    console.log('Token exchange attempted with:', {
-      code: code ? 'present' : 'missing',
-      code_verifier: code_verifier ? 'present' : 'missing',
-      redirect_uri,
-      client_id: process.env.TWITTER_CLIENT_ID ? 'present' : 'missing'
+    console.log('Auth attempt with:', {
+      clientIdExists: !!clientId,
+      codeExists: !!code,
+      verifierExists: !!code_verifier,
+      redirect_uri
     });
 
-    // Verify all required parameters are present
-    if (!code || !code_verifier || !redirect_uri) {
-      return res.status(400).json({
-        error: 'Missing required parameters',
-        details: {
-          code: !code,
-          code_verifier: !code_verifier,
-          redirect_uri: !redirect_uri
-        }
-      });
-    }
+    const params = new URLSearchParams({
+      client_id: clientId,
+      code_verifier: code_verifier,
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: redirect_uri
+    });
 
     const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({
-        client_id: process.env.TWITTER_CLIENT_ID,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri,
-        code_verifier,
-      }).toString()
+      body: params.toString()
     });
 
-    const responseText = await tokenResponse.text();
-    console.log('Twitter API response:', {
-      status: tokenResponse.status,
-      response: responseText
-    });
+    console.log('Twitter response status:', tokenResponse.status);
 
     if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Twitter error response:', errorText);
+      
       let errorData;
       try {
-        errorData = JSON.parse(responseText);
-      } catch (e) {
-        errorData = { error: 'Invalid response from Twitter' };
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: 'Unknown error' };
       }
+      
       return res.status(tokenResponse.status).json(errorData);
     }
 
-    const data = JSON.parse(responseText);
+    const data = await tokenResponse.json();
     return res.status(200).json(data);
   } catch (error) {
     console.error('Token exchange error:', error);
-    return res.status(500).json({
+    return res.status(500).json({ 
       error: 'Failed to exchange token',
-      message: error.message
+      message: error.message 
     });
   }
 }
