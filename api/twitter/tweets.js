@@ -1,54 +1,33 @@
-// Detailed error logging
-const logError = (error, context) => {
-  console.error(`Error in ${context}:`, {
-    message: error.message,
-    stack: error.stack,
-    context
-  });
-};
-
 export default async function handler(req, res) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'No authorization header provided' });
-  }
+  try {
+    // Add CORS headers
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type');
 
-  const token = authHeader.split(' ')[1];
-
-  // Handle DELETE requests for tweet deletion
-  if (req.method === 'DELETE') {
-    const { tweetId } = req.query;
-    
-    try {
-      const deleteResponse = await fetch(
-        `https://api.twitter.com/2/tweets/${tweetId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!deleteResponse.ok) {
-        const errorData = await deleteResponse.json();
-        logError(new Error('Tweet deletion failed'), {
-          status: deleteResponse.status,
-          data: errorData
-        });
-        return res.status(deleteResponse.status).json(errorData);
-      }
-
-      return res.status(200).json({ success: true });
-    } catch (error) {
-      logError(error, 'Delete tweet error');
-      return res.status(500).json({ error: error.message });
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
-  }
 
-  // Handle GET requests for fetching tweets
-  if (req.method === 'GET') {
-    try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'No authorization header' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Invalid token format' });
+    }
+
+    console.log('Received request:', {
+      method: req.method,
+      token: token ? 'present' : 'missing'
+    });
+
+    // Handle GET requests for fetching tweets
+    if (req.method === 'GET') {
       // First get the user ID
       const userResponse = await fetch('https://api.twitter.com/2/users/me', {
         headers: {
@@ -58,10 +37,7 @@ export default async function handler(req, res) {
       
       if (!userResponse.ok) {
         const errorData = await userResponse.json();
-        logError(new Error('User fetch failed'), {
-          status: userResponse.status,
-          data: errorData
-        });
+        console.error('User fetch failed:', errorData);
         return res.status(userResponse.status).json(errorData);
       }
 
@@ -79,25 +55,20 @@ export default async function handler(req, res) {
 
       if (!tweetsResponse.ok) {
         const errorData = await tweetsResponse.json();
-        logError(new Error('Tweets fetch failed'), {
-          status: tweetsResponse.status,
-          data: errorData
-        });
+        console.error('Tweets fetch failed:', errorData);
         return res.status(tweetsResponse.status).json(errorData);
       }
 
       const tweetsData = await tweetsResponse.json();
       return res.status(200).json(tweetsData);
-    } catch (error) {
-      logError(error, 'Get tweets error');
-      return res.status(500).json({ 
-        error: 'Internal server error',
-        details: error.message,
-        timestamp: new Date().toISOString()
-      });
     }
-  }
 
-  // Handle unsupported methods
-  return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (error) {
+    console.error('API error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
 }
