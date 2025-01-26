@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, AlertTriangle, MessageSquare, RefreshCw, LogOut, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getUserTweets } from '../../lib/twitter-api';
+import { getUserTweets, batchDeleteTweets } from '../../lib/twitter-api';
 import XLogo from '../XLogo';
 
 const Dashboard = () => {
@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
+  const [tweets, setTweets] = useState([]);
   const [stats, setStats] = useState({
     tweets: 0,
     replies: 0
@@ -32,6 +33,9 @@ const Dashboard = () => {
         throw new Error('No tweets data received');
       }
 
+      // Save tweets for deletion
+      setTweets(data.data);
+
       // Separate tweets and replies
       const tweetStats = data.data.reduce((acc, tweet) => {
         if (tweet.referenced_tweets?.some(ref => ref.type === 'replied_to')) {
@@ -47,7 +51,6 @@ const Dashboard = () => {
       console.error('Failed to load tweets:', error);
       setError('Failed to load tweets. Please try again.');
       
-      // Check for auth errors and redirect if needed
       if (error.message?.includes('401') || error.message?.includes('403')) {
         localStorage.removeItem('twitter_token');
         navigate('/');
@@ -67,6 +70,67 @@ const Dashboard = () => {
     localStorage.removeItem('codeVerifier');
     localStorage.removeItem('authState');
     navigate('/');
+  };
+
+  const handleDeleteTweets = async (includeReplies = false) => {
+    try {
+      setDeleting(true);
+      const token = localStorage.getItem('twitter_token');
+      
+      if (!token) {
+        navigate('/');
+        return;
+      }
+
+      const tweetsToDelete = tweets.filter(tweet => {
+        const isReply = tweet.referenced_tweets?.some(ref => ref.type === 'replied_to');
+        return includeReplies ? true : !isReply;
+      });
+
+      const tweetIds = tweetsToDelete.map(tweet => tweet.id);
+      
+      await batchDeleteTweets(tweetIds, token, (progress) => {
+        setProgress(progress);
+      });
+
+      await loadTweets();
+    } catch (error) {
+      console.error('Failed to delete tweets:', error);
+      setError('Failed to delete tweets. Please try again.');
+    } finally {
+      setDeleting(false);
+      setProgress(null);
+    }
+  };
+
+  const handleDeleteReplies = async () => {
+    try {
+      setDeleting(true);
+      const token = localStorage.getItem('twitter_token');
+      
+      if (!token) {
+        navigate('/');
+        return;
+      }
+
+      const repliesToDelete = tweets.filter(tweet =>
+        tweet.referenced_tweets?.some(ref => ref.type === 'replied_to')
+      );
+
+      const replyIds = repliesToDelete.map(tweet => tweet.id);
+      
+      await batchDeleteTweets(replyIds, token, (progress) => {
+        setProgress(progress);
+      });
+
+      await loadTweets();
+    } catch (error) {
+      console.error('Failed to delete replies:', error);
+      setError('Failed to delete replies. Please try again.');
+    } finally {
+      setDeleting(false);
+      setProgress(null);
+    }
   };
 
   return (
@@ -137,6 +201,26 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Progress */}
+          {progress && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-blue-600">Deleting...</span>
+                  <span className="text-sm font-medium text-blue-600">
+                    {progress.success} / {progress.total}
+                  </span>
+                </div>
+                <div className="w-full bg-blue-100 rounded-full h-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(progress.success / progress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Warning */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -159,7 +243,11 @@ const Dashboard = () => {
                 disabled={deleting || loading || stats.tweets === 0}
                 className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 className="h-4 w-4" />
+                {deleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
                 Delete Posts
               </button>
               <button
@@ -167,7 +255,11 @@ const Dashboard = () => {
                 disabled={deleting || loading || stats.replies === 0}
                 className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 className="h-4 w-4" />
+                {deleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
                 Delete Replies
               </button>
             </div>
@@ -176,7 +268,11 @@ const Dashboard = () => {
               disabled={deleting || loading || (stats.tweets === 0 && stats.replies === 0)}
               className="flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Trash2 className="h-4 w-4" />
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
               Delete Everything
             </button>
           </div>
