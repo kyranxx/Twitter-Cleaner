@@ -1,11 +1,9 @@
 export default async function handler(req, res) {
-  // Add CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
     return res.status(200).end();
   }
 
@@ -18,8 +16,9 @@ export default async function handler(req, res) {
     const clientId = process.env.VITE_TWITTER_CLIENT_ID;
     const redirectUri = 'https://twitter-cleaner-2.vercel.app/callback';
 
+    // Validate required parameters
     if (!code || !code_verifier || !clientId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Missing required parameters',
         details: {
           hasCode: !!code,
@@ -28,6 +27,13 @@ export default async function handler(req, res) {
         }
       });
     }
+
+    console.log('Token exchange attempt with:', {
+      hasCode: !!code,
+      hasVerifier: !!code_verifier,
+      hasClientId: !!clientId,
+      redirectUri
+    });
 
     const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
@@ -43,29 +49,30 @@ export default async function handler(req, res) {
       })
     });
 
-    const responseData = await tokenResponse.text();
-    let data;
+    const responseText = await tokenResponse.text();
+    let responseData;
+    
     try {
-      data = JSON.parse(responseData);
+      responseData = JSON.parse(responseText);
     } catch (e) {
-      console.error('Failed to parse response:', responseData);
+      console.error('Failed to parse response:', responseText);
       return res.status(500).json({ error: 'Invalid response from Twitter' });
     }
 
     if (!tokenResponse.ok) {
       console.error('Token exchange failed:', {
         status: tokenResponse.status,
-        data
+        response: responseData
       });
-      return res.status(tokenResponse.status).json(data);
+      return res.status(tokenResponse.status).json(responseData);
     }
 
-    return res.status(200).json(data);
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error('Token exchange error:', error);
-    return res.status(500).json({ 
-      error: 'Failed to exchange token',
-      message: error.message 
+    return res.status(500).json({
+      error: 'Token exchange failed',
+      message: error.message
     });
   }
 }
