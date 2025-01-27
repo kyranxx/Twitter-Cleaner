@@ -1,5 +1,10 @@
 export const exchangeToken = async (code, codeVerifier, redirectUri) => {
   try {
+    // Validate input parameters
+    if (!code || !codeVerifier || !redirectUri) {
+      throw new Error('Missing required parameters for token exchange');
+    }
+
     const response = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
       headers: {
