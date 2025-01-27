@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     const { code, code_verifier } = req.body;
-    const clientId = process.env.VITE_TWITTER_CLIENT_ID;
+    const clientId = process.env.TWITTER_CLIENT_ID; // Changed from VITE_TWITTER_CLIENT_ID
     const redirectUri = 'https://twitter-cleaner-2.vercel.app/callback';
 
     // Validate required parameters
