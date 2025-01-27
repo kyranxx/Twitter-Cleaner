@@ -36,7 +36,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' *.twitter.com *.twimg.com api.twitter.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: *.twitter.com *.twimg.com; style-src 'self' 'unsafe-inline' data: blob: *.twitter.com *.twimg.com; font-src 'self' data: *.twitter.com *.twimg.com fonts.gstatic.com fonts.googleapis.com fonts.intercomcdn.com https://*.twimg.com https://js.intercomcdn.com https://fonts.intercomcdn.com; img-src 'self' data: blob: *.twitter.com *.twimg.com; connect-src 'self' data: *.twitter.com *.twimg.com api.twitter.com https://api.twitter.com https://x.com; frame-src *.twitter.com *.twimg.com;"
+          "value": "default-src 'self' *.twitter.com *.twimg.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.twitter.com *.twimg.com; style-src 'self' 'unsafe-inline' data: blob: *.twitter.com *.twimg.com; font-src 'self' data: *.twitter.com *.twimg.com fonts.gstatic.com fonts.googleapis.com fonts.intercomcdn.com; img-src 'self' data: blob: *.twitter.com *.twimg.com; connect-src 'self' data: *.twitter.com *.twimg.com api.twitter.com; frame-src *.twitter.com *.twimg.com;"
         },
         {
           "key": "X-Frame-Options",
