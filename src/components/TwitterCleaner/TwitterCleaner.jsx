@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import XLogo from '../XLogo';
 import { Loader2, AlertCircle } from 'lucide-react';
 
+// Constants
 const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
 const CLIENT_ID = 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ';
 const REDIRECT_URI = 'https://twitter-cleaner-2.vercel.app';
