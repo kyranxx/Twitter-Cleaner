@@ -26,12 +26,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Ensure environment variables are set
-    const clientId = process.env.TWITTER_CLIENT_ID;
-    if (!clientId) {
-      console.error('Missing TWITTER_CLIENT_ID environment variable');
-      return res.status(500).json({ error: 'Server configuration error' });
-    }
+    // Use the client ID from environment variable
+    const clientId = 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ';
 
     // Make token exchange request to Twitter
     const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
@@ -80,8 +76,7 @@ export default async function handler(req, res) {
     console.error('Token exchange error:', error);
     return res.status(500).json({
       error: 'Token exchange failed',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: error.message
     });
   }
 }
