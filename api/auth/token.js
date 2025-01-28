@@ -1,9 +1,11 @@
 export default async function handler(req, res) {
-  // Handle CORS preflight
+  // Add CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Requested-With');
+
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', '*');
     return res.status(200).end();
   }
 
@@ -13,71 +15,74 @@ export default async function handler(req, res) {
 
   try {
     const { code, code_verifier } = req.body;
-    const clientId = 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ';
-    const redirectUri = 'https://twitter-cleaner-2.vercel.app';
-
-    // Debug logging
-    console.log('Token exchange attempt:', {
+    
+    // Log request details (sanitized)
+    console.log('Processing token request:', {
       hasCode: !!code,
       hasVerifier: !!code_verifier,
-      redirectUri
+      method: req.method,
+      headers: Object.keys(req.headers)
     });
 
     if (!code || !code_verifier) {
       return res.status(400).json({
         error: 'Missing required parameters',
-        details: {
-          hasCode: !!code,
-          hasVerifier: !!code_verifier
-        }
+        required: ['code', 'code_verifier']
       });
     }
 
-    // Make token exchange request
-    const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+    const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
+    const params = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ',
+      redirect_uri: 'https://twitter-cleaner-2.vercel.app',
+      code_verifier: code_verifier,
+      code: code
+    });
+
+    const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
       },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: redirectUri,
-        client_id: clientId,
-        code_verifier: code_verifier
-      })
+      body: params
     });
 
-    const responseText = await tokenResponse.text();
-    let responseData;
+    let data;
+    const responseText = await response.text();
     
     try {
-      responseData = JSON.parse(responseText);
+      data = JSON.parse(responseText);
     } catch (e) {
-      console.error('Failed to parse Twitter response:', responseText);
+      console.error('Failed to parse response:', responseText);
       return res.status(500).json({
-        error: 'Invalid response from Twitter',
-        details: responseText.substring(0, 200)
+        error: 'Invalid response format',
+        details: responseText.substring(0, 100)
       });
     }
 
-    if (!tokenResponse.ok) {
-      console.error('Token exchange failed:', {
-        status: tokenResponse.status,
-        response: responseData
-      });
-      return res.status(tokenResponse.status).json({
-        error: 'Twitter token exchange failed',
-        details: responseData
+    // Log response status
+    console.log('Twitter response:', {
+      status: response.status,
+      headers: Object.fromEntries(response.headers),
+      body: typeof data === 'object' ? 'parsed-json' : typeof data
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data.error || 'Token exchange failed',
+        details: data
       });
     }
 
-    // Success
-    return res.status(200).json(responseData);
+    // Return the successful response
+    return res.status(200).json(data);
+
   } catch (error) {
     console.error('Token exchange error:', error);
     return res.status(500).json({
-      error: 'Token exchange failed',
+      error: 'Internal server error',
       message: error.message
     });
   }
