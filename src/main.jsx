@@ -1,33 +1,34 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { createRoot } from 'react-dom/client';
 import App from './App';
+import './index.css';
 import './styles.css';
 
-const root = document.getElementById('root');
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('root');
+  
+  if (!container) {
+    throw new Error('Root element not found! Add <div id="root"></div> to your HTML');
+  }
 
-if (process.env.NODE_ENV !== 'production') {
-  console.log('Mounting app with root element:', root);
-}
-
-if (root) {
+  const root = createRoot(container);
+  
   try {
-    ReactDOM.createRoot(root).render(
+    root.render(
       <React.StrictMode>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <App />
       </React.StrictMode>
     );
   } catch (error) {
     console.error('Failed to render app:', error);
-    // Display a visible error on the page
-    root.innerHTML = `
-      <div style="padding: 20px; color: red;">
-        Failed to load application. Please check console for details.
+    container.innerHTML = `
+      <div style="padding: 20px; color: red; text-align: center;">
+        <h1>Error Loading Application</h1>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; margin-top: 10px;">
+          ${error.message}
+        </pre>
       </div>
     `;
   }
-} else {
-  console.error('Root element not found');
-}
+});
