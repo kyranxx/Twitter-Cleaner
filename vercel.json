@@ -5,6 +5,14 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/1.1/:path*",
+      "destination": "https://api.twitter.com/1.1/:path*"
+    },
+    {
+      "source": "/i/api/2/:path*",
+      "destination": "https://twitter.com/i/api/2/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
@@ -27,7 +35,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Authorization, Content-Type"
+          "value": "Authorization, Content-Type, X-Requested-With"
         }
       ]
     },
@@ -36,7 +44,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' *.twitter.com api.twitter.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data: fonts.gstatic.com; img-src 'self' data: blob: *.twimg.com; connect-src 'self' *.twitter.com api.twitter.com"
+          "value": "default-src 'self' https://*.twitter.com https://api.twitter.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data: fonts.gstatic.com; img-src 'self' data: blob: https://*.twimg.com; connect-src 'self' https://*.twitter.com https://api.twitter.com"
         },
         {
           "key": "X-Frame-Options",
