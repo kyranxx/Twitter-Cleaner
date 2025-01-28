@@ -13,21 +13,26 @@ export default async function handler(req, res) {
 
   try {
     // Extract and validate required parameters
-    const { code, code_verifier, redirect_uri } = req.body;
+    const { code, code_verifier } = req.body;
+    const redirectUri = 'https://twitter-cleaner-2.vercel.app';
+    const clientId = 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ';
 
-    if (!code || !code_verifier || !redirect_uri) {
+    // Validate required parameters
+    if (!code || !code_verifier) {
       return res.status(400).json({
         error: 'Missing required parameters',
         details: {
           hasCode: !!code,
-          hasVerifier: !!code_verifier,
-          hasRedirectUri: !!redirect_uri
+          hasVerifier: !!code_verifier
         }
       });
     }
 
-    // Use the client ID from environment variable
-    const clientId = 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ';
+    console.log('Making token request with:', {
+      code: code ? 'present' : 'missing',
+      verifier: code_verifier ? 'present' : 'missing',
+      redirectUri
+    });
 
     // Make token exchange request to Twitter
     const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
@@ -39,8 +44,8 @@ export default async function handler(req, res) {
         grant_type: 'authorization_code',
         code,
         client_id: clientId,
-        redirect_uri,
-        code_verifier
+        redirect_uri: redirectUri,
+        code_verifier: code_verifier
       })
     });
 
@@ -76,7 +81,8 @@ export default async function handler(req, res) {
     console.error('Token exchange error:', error);
     return res.status(500).json({
       error: 'Token exchange failed',
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
