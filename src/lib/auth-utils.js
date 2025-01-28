@@ -1,5 +1,7 @@
 import { config } from './config';
 
+const REDIRECT_URI = 'https://twitter-cleaner-2.vercel.app/callback';
+
 export const generateAuthUrl = async () => {
   try {
     // Generate verifier
@@ -19,7 +21,7 @@ export const generateAuthUrl = async () => {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: config.clientId,
-      redirect_uri: config.redirectUri,
+      redirect_uri: REDIRECT_URI,
       scope: 'tweet.read tweet.write users.read offline.access',
       state: state,
       code_challenge: challenge,
@@ -51,7 +53,7 @@ export const handleTokenExchange = async ({ code, returnedState, onSuccess, onEr
       throw new Error('State mismatch - possible security issue');
     }
 
-    // Make token exchange request
+    // Make token exchange request to Vercel serverless function
     const response = await fetch('/api/auth/token', {
       method: 'POST',
       headers: {
@@ -60,7 +62,7 @@ export const handleTokenExchange = async ({ code, returnedState, onSuccess, onEr
       body: JSON.stringify({
         code,
         code_verifier: verifier,
-        redirect_uri: config.redirectUri,
+        redirect_uri: REDIRECT_URI,
         grant_type: 'authorization_code'
       }),
     });
