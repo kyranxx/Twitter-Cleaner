@@ -1,4 +1,3 @@
-// file: /api/auth/token.js
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -13,10 +12,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Extract body parameters
     const { code, code_verifier } = req.body;
     const clientId = process.env.TWITTER_CLIENT_ID;
     const redirectUri = 'https://twitter-cleaner-2.vercel.app/callback';
+
+    // Debug log to see what we're receiving
+    console.log('Request body:', req.body);
+    console.log('Environment variables:', {
+      hasClientId: !!process.env.TWITTER_CLIENT_ID
+    });
 
     // Validate required parameters
     if (!code || !code_verifier || !clientId) {
@@ -25,7 +29,8 @@ export default async function handler(req, res) {
         details: {
           hasCode: !!code,
           hasVerifier: !!code_verifier,
-          hasClientId: !!clientId
+          hasClientId: !!clientId,
+          receivedBody: req.body
         }
       });
     }
@@ -37,7 +42,6 @@ export default async function handler(req, res) {
       redirectUri
     });
 
-    // Prepare the token exchange request
     const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
       headers: {
@@ -52,9 +56,9 @@ export default async function handler(req, res) {
       })
     });
 
-    // Parse the response
     const responseText = await tokenResponse.text();
     let responseData;
+    
     try {
       responseData = JSON.parse(responseText);
     } catch (e) {
@@ -62,7 +66,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Invalid response from Twitter' });
     }
 
-    // Handle unsuccessful token response
     if (!tokenResponse.ok) {
       console.error('Token exchange failed:', {
         status: tokenResponse.status,
@@ -71,8 +74,6 @@ export default async function handler(req, res) {
       return res.status(tokenResponse.status).json(responseData);
     }
 
-    // Successful response
-    console.log('Token exchange succeeded:', responseData);
     return res.status(200).json(responseData);
   } catch (error) {
     console.error('Token exchange error:', error);
