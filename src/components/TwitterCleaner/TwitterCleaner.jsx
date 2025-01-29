@@ -24,8 +24,8 @@ const TwitterCleaner = () => {
       // Redirect to Twitter
       const params = new URLSearchParams({
         response_type: 'code',
-        client_id: 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ',
-        redirect_uri: 'https://twitter-cleaner-2.vercel.app',
+        client_id: process.env.VITE_TWITTER_CLIENT_ID || 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ',
+        redirect_uri: process.env.VITE_TWITTER_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback',
         scope: 'tweet.read tweet.write users.read',
         code_challenge: challenge,
         code_challenge_method: 'S256'
