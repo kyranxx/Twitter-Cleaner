@@ -34,8 +34,8 @@ export default async function handler(req, res) {
     const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
-      client_id: 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ',
-      redirect_uri: 'https://twitter-cleaner-2.vercel.app',
+      client_id: process.env.VITE_TWITTER_CLIENT_ID || 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ',
+      redirect_uri: process.env.VITE_TWITTER_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback',
       code_verifier: code_verifier,
       code: code
     });
