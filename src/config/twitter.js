@@ -1,6 +1,6 @@
 export const TWITTER_CONFIG = {
-  clientId: import.meta.env.VITE_TWITTER_CLIENT_ID,
-  redirectUri: import.meta.env.VITE_TWITTER_REDIRECT_URI,
+  clientId: import.meta.env.VITE_TWITTER_CLIENT_ID || 'SmFPMml6WnoOekNWWDQ4bEpSd2I6MTpjaQ',
+  redirectUri: import.meta.env.VITE_TWITTER_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback',
   scope: ['tweet.read', 'tweet.write', 'users.read'].join(' '),
   authUrl: 'https://twitter.com/i/oauth2/authorize',
 };
