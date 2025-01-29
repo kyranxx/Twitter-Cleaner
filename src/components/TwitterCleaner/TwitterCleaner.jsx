@@ -128,24 +128,4 @@ const TwitterCleaner = () => {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] disabled:opacity-50 text-white px-4 py-2 rounded-md font-medium transition-colors"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <XLogo className="h-5 w-5" />
-                Sign in with Twitter
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default TwitterCleaner;
+            className="w-full flex
