@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import TwitterCleaner from './components/TwitterCleaner/TwitterCleaner'; // Ensure this matches the export
+import TwitterCleaner from './components/TwitterCleaner/TwitterCleaner';
 import Dashboard from './components/TwitterCleaner/Dashboard';
 
 function App() {
