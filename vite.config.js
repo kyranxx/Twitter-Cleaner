@@ -5,9 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [
     react({
-      // Include JSX runtime
       jsxRuntime: 'automatic',
-      // Add React refresh
       fastRefresh: true,
     })
   ],
