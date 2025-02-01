@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TWITTER_CONFIG, generateTwitterAuthUrl, validateOAuthState, getStoredCodeVerifier, clearOAuthData } from '../../config/twitter';
-import LoadingButton from '../../components/LoadingButton/LoadingButton.jsx'; // Full path with extension
+import LoadingButton from '../LoadingButton/LoadingButton';
 import { Container } from './TwitterCleaner.styles';
 
 const TwitterCleaner = () => {
