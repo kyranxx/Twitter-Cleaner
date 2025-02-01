@@ -8,7 +8,8 @@ function generateRandomString(length) {
 export const TWITTER_CONFIG = {
   clientId: import.meta.env.VITE_TWITTER_CLIENT_ID || 'SmEPNmlGNno0ekNWWDQ4bFpSd2I6MTpjaQ',
   redirectUri: import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback',
-  scope: ['tweet.read', 'tweet.write', 'users.read'].join(' '),
+  // Updated scopes to match Twitter's expected format
+  scope: 'tweet.read tweet.write users.read offline.access',
   authUrl: 'https://twitter.com/i/oauth2/authorize',
   tokenUrl: 'https://api.twitter.com/2/oauth2/token'
 };
@@ -55,4 +56,9 @@ export const getStoredCodeVerifier = () => {
 export const clearOAuthData = () => {
   localStorage.removeItem('twitter_oauth_state');
   localStorage.removeItem('twitter_code_verifier');
+  localStorage.removeItem('twitter_token');
+  // Clear any existing Twitter cookies
+  document.cookie.split(";").forEach(function(c) { 
+    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+  });
 };
