@@ -1,5 +1,6 @@
 import React from 'react';
-import styled from 'styled-components';
+import { css } from '@emotion/react';
+import styled from '@emotion/styled';
 
 const StyledButton = styled.button`
   background-color: #1da1f2;
@@ -25,6 +26,13 @@ const StyledButton = styled.button`
   }
 `;
 
+const spinAnimation = css`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 const Spinner = styled.div`
   border: 2px solid #f3f3f3;
   border-top: 2px solid #3498db;
@@ -33,11 +41,7 @@ const Spinner = styled.div`
   height: 16px;
   animation: spin 1s linear infinite;
   margin-right: 10px;
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  ${spinAnimation}
 `;
 
 const LoadingButton = ({ children, loading, ...props }) => {
