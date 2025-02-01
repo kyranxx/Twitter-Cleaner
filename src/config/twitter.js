@@ -1,15 +1,7 @@
-// Helper functions for OAuth
-function generateRandomString(length) {
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const values = crypto.getRandomValues(new Uint8Array(length));
-  return values.reduce((acc, x) => acc + possible[x % possible.length], "");
-}
-
 export const TWITTER_CONFIG = {
   clientId: import.meta.env.VITE_TWITTER_CLIENT_ID || 'SmEPNmlGNno0ekNWWDQ4bFpSd2I6MTpjaQ',
   redirectUri: import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback',
-  // Updated scopes to match Twitter's expected format
-  scope: 'tweet.read tweet.write users.read offline.access',
+  scope: 'tweet.read tweet.write users.read',
   authUrl: 'https://twitter.com/i/oauth2/authorize',
   tokenUrl: 'https://api.twitter.com/2/oauth2/token'
 };
@@ -26,7 +18,6 @@ export const generateTwitterAuthUrl = () => {
         .replace(/\//g, '_')
         .replace(/=/g, '');
 
-      // Store state and verifier
       localStorage.setItem('twitter_oauth_state', state);
       localStorage.setItem('twitter_code_verifier', codeVerifier);
 
@@ -44,6 +35,12 @@ export const generateTwitterAuthUrl = () => {
     });
 };
 
+function generateRandomString(length) {
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const values = crypto.getRandomValues(new Uint8Array(length));
+  return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+}
+
 export const validateOAuthState = (returnedState) => {
   const savedState = localStorage.getItem('twitter_oauth_state');
   return savedState === returnedState;
@@ -57,8 +54,4 @@ export const clearOAuthData = () => {
   localStorage.removeItem('twitter_oauth_state');
   localStorage.removeItem('twitter_code_verifier');
   localStorage.removeItem('twitter_token');
-  // Clear any existing Twitter cookies
-  document.cookie.split(";").forEach(function(c) { 
-    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-  });
 };
