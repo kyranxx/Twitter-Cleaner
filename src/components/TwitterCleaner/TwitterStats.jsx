@@ -1,7 +1,27 @@
 import React, { useMemo } from 'react';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Loader, MessageSquare, Twitter } from 'lucide-react';
-import { Card } from '../../components/ui/card';
+import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
+import { Loader, MessageSquare, Twitter, Check } from 'lucide-react';
+
+const Card = ({ className = '', ...props }) => (
+  <div
+    className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}
+    {...props}
+  />
+);
+
+const Checkbox = React.forwardRef(({ className = '', ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={`peer h-4 w-4 shrink-0 rounded-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ${className}`}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+));
+
+Checkbox.displayName = 'Checkbox';
 
 const TwitterStats = ({ 
   isLoading,
@@ -49,7 +69,6 @@ const TwitterStats = ({
         <div className="flex items-center gap-2">
           <Checkbox 
             checked={isAllSelected}
-            indeterminate={isPartiallySelected}
             onCheckedChange={handleSelectAll}
             disabled={hasError || totalItems === 0}
           />
