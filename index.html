@@ -4,25 +4,38 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Twitter Account Cleaner - Manage your Twitter account" />
     <title>Twitter Cleaner</title>
-    <link rel="preload" href="/src/index.css" as="style" />
-    <link rel="preload" href="/src/styles.css" as="style" />
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" as="style" />
-    <link rel="preload" href="https://fonts.gstatic.com" as="style" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --background: #ffffff;
+        --foreground: #0f1419;
+        --primary: #1d9bf0;
+        --primary-foreground: #ffffff;
+        --destructive: #f4212e;
+        --destructive-foreground: #ffffff;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                     Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        margin: 0;
+        background-color: var(--background);
+        color: var(--foreground);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+    </style>
   </head>
   <body>
-    <div id="root">
-      <div style="
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: #f7f9f9;
-      ">
-        <p style="color: #536471;">Loading application...</p>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

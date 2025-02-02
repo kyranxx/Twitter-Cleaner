@@ -1,24 +1,11 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Trash2, Loader, LogOut, AlertTriangle } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Trash2, Loader, AlertTriangle } from 'lucide-react';
 
 const DeleteOptions = ({ 
   isDeleting,
   progress,
   selection,
   onDelete,
-  onLogout,
   disabled,
   hasError
 }) => {
@@ -40,91 +27,94 @@ const DeleteOptions = ({
 
   return (
     <div className="space-y-4">
-      <Alert variant="warning">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Warning</AlertTitle>
-        <AlertDescription className="space-y-2">
-          <p>
-            This action will permanently delete all selected items from your Twitter account.
-            This action cannot be undone.
-          </p>
-          {(selection.tweets || selection.comments) && (
-            <p className="font-medium">
-              You have selected to delete {selectedItems}.
+      {/* Warning Alert */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h3 className="font-medium text-yellow-800">Warning</h3>
+            <p className="text-sm text-yellow-700">
+              This action will permanently delete all selected items from your Twitter account.
+              This action cannot be undone.
             </p>
-          )}
-        </AlertDescription>
-      </Alert>
-
-      <div className="space-y-2">
-        <Button
-          onClick={() => setShowConfirmDialog(true)}
-          variant="destructive"
-          className="w-full relative"
-          disabled={isDeleting || (!selection.tweets && !selection.comments) || disabled}
-        >
-          {isDeleting ? (
-            <>
-              <div className="flex items-center justify-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>Deleting... {progress}%</span>
-              </div>
-              <div 
-                className="absolute bottom-0 left-0 h-1 bg-white/20 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </>
-          ) : (
-            <>
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Selected Items
-            </>
-          )}
-        </Button>
-
-        <Button
-          onClick={onLogout}
-          variant="outline"
-          className="w-full"
-          disabled={isDeleting || disabled}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
+            {(selection.tweets || selection.comments) && (
+              <p className="text-sm font-medium text-yellow-800 mt-2">
+                You have selected to delete {selectedItems}.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+      {/* Delete Button */}
+      <button
+        onClick={() => setShowConfirmDialog(true)}
+        disabled={isDeleting || (!selection.tweets && !selection.comments) || disabled}
+        className="w-full bg-[var(--destructive)] text-white rounded-lg py-2.5 px-4 font-medium
+                   hover:bg-[var(--destructive)]/90 transition-colors relative overflow-hidden
+                   disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isDeleting ? (
+          <>
+            <div className="flex items-center justify-center space-x-2">
+              <Loader className="h-5 w-5 animate-spin" />
+              <span>Deleting... {progress}%</span>
+            </div>
+            <div 
+              className="absolute bottom-0 left-0 h-1 bg-white/20 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </>
+        ) : (
+          <div className="flex items-center justify-center space-x-2">
+            <Trash2 className="h-5 w-5" />
+            <span>Delete Selected Items</span>
+          </div>
+        )}
+      </button>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-xl font-semibold">Are you absolutely sure?</h2>
+            <div className="space-y-2 text-gray-600">
               <p>
                 This action cannot be undone. This will permanently delete the selected
                 items from your Twitter account.
               </p>
               {(selection.tweets || selection.comments) && (
-                <p className="font-medium text-destructive">
+                <p className="font-medium text-[var(--destructive)]">
                   You are about to delete {selectedItems}.
                 </p>
               )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <Loader className="w-4 h-4 animate-spin" />
-              ) : (
-                "Yes, Delete"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-[var(--destructive)] text-white rounded-lg font-medium
+                         hover:bg-[var(--destructive)]/90 transition-colors
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? (
+                  <Loader className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Yes, Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
