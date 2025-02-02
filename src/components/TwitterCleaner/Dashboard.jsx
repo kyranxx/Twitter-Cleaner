@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, RefreshCw, LogOut, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, LogOut, AlertCircle, WifiOff } from 'lucide-react';
 import CleanerLogo from '../CleanerLogo';
 import TwitterStats from './TwitterStats';
 import DeleteOptions from './DeleteOptions';
@@ -17,6 +17,8 @@ const Dashboard = () => {
     tweets: false,
     comments: false
   });
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastError, setLastError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -25,11 +27,12 @@ const Dashboard = () => {
     comments: tweets.filter(t => t.referenced_tweets?.some(r => r.type === 'replied_to')).length
   };
 
-  useEffect(() => {
-    loadTweets();
-  }, []);
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('twitter_token');
+    navigate('/');
+  }, [navigate]);
 
-  const loadTweets = async () => {
+  const loadTweets = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -43,17 +46,30 @@ const Dashboard = () => {
       setTweets(response.data || []);
     } catch (error) {
       console.error('Failed to load tweets:', error);
-      if (error.message === 'auth_error' || error.message === 'Not authenticated') {
+      setLastError(error);
+      
+      if (error.message.startsWith('auth_error') || error.message === 'Not authenticated') {
         handleLogout();
-      } else {
-        setError('Failed to load your tweets. Please try again.');
+        return;
       }
+      
+      if (error.message.startsWith('network_error')) {
+        setError('No internet connection. Please check your connection and try again.');
+        return;
+      }
+      
+      if (error.message.startsWith('rate_limit')) {
+        setError('Rate limit reached. Please wait a moment and try again.');
+        return;
+      }
+
+      setError('Failed to load your tweets. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleLogout]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     try {
       setIsDeleting(true);
       const token = localStorage.getItem('twitter_token');
@@ -79,28 +95,40 @@ const Dashboard = () => {
       await loadTweets();
     } catch (error) {
       console.error('Delete error:', error);
-      if (error.message === 'auth_error') {
+      setLastError(error);
+      
+      if (error.message.startsWith('auth_error')) {
         handleLogout();
-      } else {
-        setError('Failed to delete items. Please try again.');
+        return;
       }
+      
+      if (error.message.startsWith('network_error')) {
+        setError('No internet connection. Please check your connection and try again.');
+        return;
+      }
+      
+      if (error.message.startsWith('rate_limit')) {
+        setError('Rate limit reached. Your progress has been saved. Please wait a moment.');
+        return;
+      }
+
+      setError('Failed to delete items. Please try again.');
     } finally {
       setIsDeleting(false);
       setDeleteProgress(0);
     }
-  };
+  }, [tweets, selection, loadTweets, handleLogout]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('twitter_token');
-    navigate('/');
-  };
-
-  const handleSelectionChange = (type, checked) => {
+  const handleSelectionChange = useCallback((type, checked) => {
     setSelection(prev => ({
       ...prev,
       [type]: checked
     }));
-  };
+  }, []);
+
+  useEffect(() => {
+    loadTweets();
+  }, [loadTweets]);
 
   if (loading && !tweets.length) {
     return (
@@ -147,9 +175,31 @@ const Dashboard = () => {
           </div>
 
           {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+            <Alert variant={error.includes('Rate limit') ? 'warning' : 'destructive'}>
+              {error.includes('internet') ? (
+                <WifiOff className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              <AlertDescription>
+                {error}
+                {lastError && lastError.message.startsWith('rate_limit') && (
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setRetryCount(prev => prev + 1);
+                      if (isDeleting) {
+                        handleDelete();
+                      } else {
+                        loadTweets();
+                      }
+                    }}
+                    className="ml-2 text-sm underline hover:no-underline"
+                  >
+                    Retry Now
+                  </button>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -158,6 +208,7 @@ const Dashboard = () => {
             stats={stats}
             selection={selection}
             onSelectionChange={handleSelectionChange}
+            hasError={!!error}
           />
 
           <DeleteOptions 
@@ -166,6 +217,8 @@ const Dashboard = () => {
             selection={selection}
             onDelete={handleDelete}
             onLogout={handleLogout}
+            disabled={!!error || loading}
+            hasError={!!error}
           />
         </div>
       </div>
