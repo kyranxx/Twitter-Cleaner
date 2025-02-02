@@ -1,17 +1,44 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { Trash2, Loader, LogOut, AlertTriangle } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
+const Button = ({ children, variant = 'default', className = '', ...props }) => (
+  <button
+    className={`px-4 py-2 rounded font-medium ${
+      variant === 'destructive'
+        ? 'bg-red-600 text-white hover:bg-red-700'
+        : variant === 'outline'
+        ? 'border border-gray-300 hover:bg-gray-50'
+        : 'bg-primary text-white hover:bg-primary/90'
+    } ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+const Alert = ({ children, variant = 'default', className = '', ...props }) => (
+  <div
+    className={`rounded-lg border p-4 ${
+      variant === 'warning' ? 'border-yellow-200 bg-yellow-50' : ''
+    } ${className}`}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+const AlertTitle = ({ children, className = '', ...props }) => (
+  <h5 className={`mb-1 font-medium leading-none tracking-tight ${className}`} {...props}>
+    {children}
+  </h5>
+);
+
+const AlertDescription = ({ children, className = '', ...props }) => (
+  <div className={`text-sm [&_p]:leading-relaxed ${className}`} {...props}>
+    {children}
+  </div>
+);
 
 const DeleteOptions = ({ 
   isDeleting,
@@ -93,38 +120,47 @@ const DeleteOptions = ({
         </Button>
       </div>
 
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+      <AlertDialog.Root open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 bg-black/50" />
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+            <AlertDialog.Title className="text-lg font-semibold">
+              Are you absolutely sure?
+            </AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 space-y-2">
               <p>
                 This action cannot be undone. This will permanently delete the selected
                 items from your Twitter account.
               </p>
               {(selection.tweets || selection.comments) && (
-                <p className="font-medium text-destructive">
+                <p className="font-medium text-red-600">
                   You are about to delete {selectedItems}.
                 </p>
               )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <Loader className="w-4 h-4 animate-spin" />
-              ) : (
-                "Yes, Delete"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </AlertDialog.Description>
+            <div className="mt-4 flex justify-end gap-2">
+              <AlertDialog.Cancel asChild>
+                <Button variant="outline" disabled={isDeleting}>
+                  Cancel
+                </Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button
+                  variant="destructive"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Yes, Delete"
+                  )}
+                </Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
   );
 };
