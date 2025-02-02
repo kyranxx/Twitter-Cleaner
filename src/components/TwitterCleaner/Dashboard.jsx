@@ -5,7 +5,24 @@ import CleanerLogo from '../CleanerLogo';
 import TwitterStats from './TwitterStats';
 import DeleteOptions from './DeleteOptions';
 import { getUserTweets, batchDeleteTweets } from '../../lib/twitter-api';
-import { Alert, AlertDescription } from '../ui/alert';
+
+const Alert = ({ children, variant = 'default', className = '', ...props }) => (
+  <div
+    className={`rounded-lg border p-4 ${
+      variant === 'destructive' ? 'border-red-200 bg-red-50' :
+      variant === 'warning' ? 'border-yellow-200 bg-yellow-50' : ''
+    } ${className}`}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+const AlertDescription = ({ children, className = '', ...props }) => (
+  <div className={`text-sm [&_p]:leading-relaxed ${className}`} {...props}>
+    {children}
+  </div>
+);
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
