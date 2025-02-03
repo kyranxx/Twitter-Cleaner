@@ -1,0 +1,41 @@
+name: Auto Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      changes_json:
+        description: 'JSON containing file changes'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          
+      - name: Apply Changes
+        run: |
+          echo '${{ github.event.inputs.changes_json }}' > changes.json
+          while IFS= read -r line; do
+            file_path=$(echo "$line" | jq -r '.path')
+            content=$(echo "$line" | jq -r '.content')
+            mkdir -p "$(dirname "$file_path")"
+            echo "$content" > "$file_path"
+          done < <(jq -c '.[]' changes.json)
+          
+      - name: Commit and Push Changes
+        run: |
+          git add .
+          git commit -m "feat: automated update via GitHub Actions"
+          git push origin main

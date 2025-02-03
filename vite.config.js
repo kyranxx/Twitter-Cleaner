@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -8,7 +8,12 @@ export default defineConfig(({ command, mode }) => {
   const isDevelopment = mode === 'development';
 
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        jsxRuntime: 'automatic',
+        jsxImportSource: 'react'
+      })
+    ],
     server: {
       proxy: {
         '/api/auth/token': {
@@ -65,6 +70,12 @@ export default defineConfig(({ command, mode }) => {
     },
     optimizeDeps: {
       include: ['react', 'react-dom', 'react-router-dom'],
+      esbuildOptions: {
+        jsx: 'automatic',
+      }
+    },
+    esbuild: {
+      jsxInject: `import React from 'react'`,
     },
     // Base URL based on environment
     base: isDevelopment ? '/' : 'https://twitter-cleaner-2.vercel.app',
