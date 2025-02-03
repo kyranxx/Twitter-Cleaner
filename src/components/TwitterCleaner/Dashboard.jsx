@@ -1,9 +1,28 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, RefreshCw, LogOut, AlertCircle, WifiOff } from 'lucide-react';
+import CleanerLogo from '../CleanerLogo';
 import TwitterStats from './TwitterStats';
 import DeleteOptions from './DeleteOptions';
 import { getUserTweets, batchDeleteTweets } from '../../lib/twitter-api';
+
+const Alert = ({ children, variant = 'default', className = '', ...props }) => (
+  <div
+    className={`rounded-lg border p-4 ${
+      variant === 'destructive' ? 'border-red-200 bg-red-50' :
+      variant === 'warning' ? 'border-yellow-200 bg-yellow-50' : ''
+    } ${className}`}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+const AlertDescription = ({ children, className = '', ...props }) => (
+  <div className={`text-sm [&_p]:leading-relaxed ${className}`} {...props}>
+    {children}
+  </div>
+);
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -128,21 +147,34 @@ const Dashboard = () => {
     loadTweets();
   }, [loadTweets]);
 
+  if (loading && !tweets.length) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-[var(--foreground)]">Loading your Twitter data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] p-6">
+        <div className="flex flex-col gap-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">Twitter Cleaner</h1>
+              <CleanerLogo className="h-6 w-6 text-[var(--foreground)]" />
+              <h1 className="text-xl font-bold text-[var(--foreground)]">
+                Account Cleanup
+              </h1>
             </div>
-            <div className="flex items-center gap-4">
-              <button
+            <div className="flex items-center gap-2">
+              <button 
                 onClick={loadTweets}
                 disabled={loading || isDeleting}
-                className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50"
-                title="Refresh"
+                className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -150,50 +182,42 @@ const Dashboard = () => {
                   <RefreshCw className="h-5 w-5" />
                 )}
               </button>
-              <button
+              <button 
                 onClick={handleLogout}
-                className="p-2 text-gray-600 hover:text-gray-900"
-                title="Logout"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
               >
                 <LogOut className="h-5 w-5" />
               </button>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-3xl mx-auto space-y-6">
           {error && (
-            <div className={`rounded-lg border p-4 ${
-              error.includes('Rate limit') ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-center gap-2">
-                {error.includes('internet') ? (
-                  <WifiOff className="h-5 w-5 text-red-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                )}
-                <p className="text-sm text-gray-700">{error}</p>
-              </div>
-              {lastError && lastError.message.startsWith('rate_limit') && (
-                <button
-                  onClick={() => {
-                    setError(null);
-                    setRetryCount(prev => prev + 1);
-                    if (isDeleting) {
-                      handleDelete();
-                    } else {
-                      loadTweets();
-                    }
-                  }}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Retry Now
-                </button>
+            <Alert variant={error.includes('Rate limit') ? 'warning' : 'destructive'}>
+              {error.includes('internet') ? (
+                <WifiOff className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
               )}
-            </div>
+              <AlertDescription>
+                {error}
+                {lastError && lastError.message.startsWith('rate_limit') && (
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setRetryCount(prev => prev + 1);
+                      if (isDeleting) {
+                        handleDelete();
+                      } else {
+                        loadTweets();
+                      }
+                    }}
+                    className="ml-2 text-sm underline hover:no-underline"
+                  >
+                    Retry Now
+                  </button>
+                )}
+              </AlertDescription>
+            </Alert>
           )}
 
           <TwitterStats 
@@ -214,7 +238,7 @@ const Dashboard = () => {
             hasError={!!error}
           />
         </div>
-      </main>
+      </div>
     </div>
   );
 };

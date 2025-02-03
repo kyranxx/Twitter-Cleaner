@@ -1,9 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../ui/card';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from '../ui/alert';
 import { validateOAuthState, getStoredCodeVerifier, storeToken } from '../../config/twitter';
+
+const Card = ({ className = '', ...props }) => (
+  <div
+    className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}
+    {...props}
+  />
+);
+
+const CardContent = ({ className = '', ...props }) => (
+  <div className={`p-6 pt-0 ${className}`} {...props} />
+);
+
+const Alert = ({ children, variant = 'default', className = '', ...props }) => (
+  <div
+    className={`rounded-lg border p-4 ${
+      variant === 'destructive' ? 'border-red-200 bg-red-50' : ''
+    } ${className}`}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+const AlertDescription = ({ children, className = '', ...props }) => (
+  <div className={`text-sm [&_p]:leading-relaxed ${className}`} {...props}>
+    {children}
+  </div>
+);
 
 const TwitterCallback = () => {
   const [status, setStatus] = useState('Verifying authentication...');

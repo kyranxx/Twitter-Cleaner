@@ -7,56 +7,31 @@ export const TWITTER_CONFIG = {
   tokenExpiryBuffer: 300, // 5 minutes buffer before token expiry
 };
 
-// Encryption key for token storage
+// Storage key for data
 const STORAGE_KEY = 'twitter_cleaner_v1';
-const ENCRYPTION_KEY = await crypto.subtle.generateKey(
-  { name: 'AES-GCM', length: 256 },
-  true,
-  ['encrypt', 'decrypt']
-);
 
-// Token storage with encryption
+// Simple encryption using base64 for storage
 const secureStorage = {
-  async encrypt(data) {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encodedData = new TextEncoder().encode(JSON.stringify(data));
-    
-    const encryptedData = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      ENCRYPTION_KEY,
-      encodedData
-    );
-
-    return {
-      iv: Array.from(iv),
-      data: Array.from(new Uint8Array(encryptedData))
-    };
-  },
-
-  async decrypt(encryptedData) {
+  async set(key, value) {
     try {
-      const decryptedData = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(encryptedData.iv) },
-        ENCRYPTION_KEY,
-        new Uint8Array(encryptedData.data)
-      );
-
-      return JSON.parse(new TextDecoder().decode(decryptedData));
+      const data = JSON.stringify(value);
+      const encoded = btoa(data);
+      localStorage.setItem(`${STORAGE_KEY}_${key}`, encoded);
     } catch (error) {
-      console.error('Failed to decrypt data:', error);
-      return null;
+      console.error('Failed to store data:', error);
     }
   },
 
-  async set(key, value) {
-    const encrypted = await this.encrypt(value);
-    localStorage.setItem(`${STORAGE_KEY}_${key}`, JSON.stringify(encrypted));
-  },
-
   async get(key) {
-    const encrypted = localStorage.getItem(`${STORAGE_KEY}_${key}`);
-    if (!encrypted) return null;
-    return await this.decrypt(JSON.parse(encrypted));
+    try {
+      const encoded = localStorage.getItem(`${STORAGE_KEY}_${key}`);
+      if (!encoded) return null;
+      const data = atob(encoded);
+      return JSON.parse(data);
+    } catch (error) {
+      console.error('Failed to retrieve data:', error);
+      return null;
+    }
   },
 
   remove(key) {
@@ -77,7 +52,7 @@ export const generateTwitterAuthUrl = async () => {
       .replace(/\//g, '_')
       .replace(/=/g, '');
 
-    // Store auth state securely
+    // Store auth state
     await secureStorage.set('oauth_state', {
       state,
       codeVerifier,
