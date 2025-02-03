@@ -5,8 +5,6 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Twitter Cleaner</title>
-    <!-- Preload fonts locally instead of from external CDN -->
-    <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
     <style>
       @font-face {
         font-family: 'Inter';
@@ -36,8 +34,15 @@
         box-sizing: border-box;
       }
     </style>
-    <!-- Add CSP meta tag -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://twitter-cleaner-2.vercel.app https://api.twitter.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://twitter-cleaner-2.vercel.app https://api.twitter.com;">
+    <!-- Update CSP to allow font loading -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https://twitter-cleaner-2.vercel.app https://api.twitter.com;
+      style-src 'self' 'unsafe-inline';
+      font-src 'self';
+      img-src 'self' data: https:;
+      connect-src 'self' https://twitter-cleaner-2.vercel.app https://api.twitter.com ws:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    ">
   </head>
   <body>
     <div id="root"></div>

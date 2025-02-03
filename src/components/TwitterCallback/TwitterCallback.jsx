@@ -4,10 +4,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { validateOAuthState, getStoredCodeVerifier, storeToken, TWITTER_CONFIG } from '../../config/twitter';
 
 const Card = ({ className = '', ...props }) => (
-  <div
-    className={`bg-white rounded-xl border shadow-sm ${className}`}
-    {...props}
-  />
+  <div className={`bg-white rounded-xl border shadow-sm ${className}`} {...props} />
 );
 
 const Alert = ({ children, variant = 'default', className = '', ...props }) => (
@@ -40,7 +37,7 @@ const TwitterCallback = () => {
           throw new Error(
             error === 'access_denied' 
               ? 'Access was denied. Please try again.'
-              : 'Authentication failed. Please try again.'
+              : `Authentication failed: ${error}`
           );
         }
 
@@ -49,8 +46,7 @@ const TwitterCallback = () => {
         }
 
         // Validate OAuth state
-        const isValidState = validateOAuthState(state);
-        if (!isValidState) {
+        if (!validateOAuthState(state)) {
           throw new Error('Invalid state parameter. Please try logging in again.');
         }
 
@@ -63,7 +59,7 @@ const TwitterCallback = () => {
         setStatus('Exchanging authentication code...');
 
         // Exchange code for token
-        const tokenResponse = await fetch(TWITTER_CONFIG.tokenUrl, {
+        const response = await fetch(TWITTER_CONFIG.tokenUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -73,17 +69,21 @@ const TwitterCallback = () => {
             code,
             redirect_uri: TWITTER_CONFIG.redirectUri,
             code_verifier: codeVerifier,
-            client_id: TWITTER_CONFIG.clientId
+            client_id: TWITTER_CONFIG.clientId,
           }),
         });
 
-        if (!tokenResponse.ok) {
-          const errorData = await tokenResponse.json().catch(() => ({}));
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
           console.error('Token exchange error:', errorData);
-          throw new Error(errorData.error_description || `Failed to authenticate: ${tokenResponse.status}`);
+          throw new Error(
+            errorData.error_description || 
+            errorData.error || 
+            `Failed to authenticate (${response.status})`
+          );
         }
 
-        const tokenData = await tokenResponse.json();
+        const tokenData = await response.json();
         
         setStatus('Securing your session...');
         await storeToken(tokenData);

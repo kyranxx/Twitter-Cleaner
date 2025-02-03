@@ -1,22 +1,37 @@
-import React, { useState } from 'react';
-import { generateTwitterAuthUrl } from '../../config/twitter';
+import React, { useState, useCallback, useEffect } from 'react';
+import { generateTwitterAuthUrl, TWITTER_CONFIG } from '../../config/twitter';
 
 const TwitterCleaner = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleLogin = async () => {
+  // Verify client ID on component mount
+  useEffect(() => {
+    if (!TWITTER_CONFIG.clientId) {
+      console.error('Twitter Client ID is missing. Please check your .env file.');
+      setError('Twitter configuration is incomplete. Please check your settings.');
+    } else {
+      console.log('Client ID verified:', TWITTER_CONFIG.clientId.slice(0, 8) + '...');
+    }
+  }, []);
+
+  const handleLogin = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Initializing Twitter authentication...');
+      console.log('Using client ID:', TWITTER_CONFIG.clientId.slice(0, 8) + '...');
+      console.log('Redirect URI:', TWITTER_CONFIG.redirectUri);
+      
       const authUrl = await generateTwitterAuthUrl();
+      console.log('Generated auth URL:', authUrl);
       window.location.href = authUrl;
     } catch (err) {
       console.error('Login error:', err);
-      setError('Failed to initialize login. Please try again.');
+      setError(err.message || 'Failed to initialize login. Please try again.');
       setLoading(false);
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-4">
@@ -46,7 +61,7 @@ const TwitterCleaner = () => {
           {/* Login Button */}
           <button
             onClick={handleLogin}
-            disabled={loading}
+            disabled={loading || !TWITTER_CONFIG.clientId}
             className="w-full bg-[var(--primary)] text-white rounded-full py-3 px-4 font-semibold
                      hover:bg-[var(--primary)]/90 transition-colors relative
                      disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
