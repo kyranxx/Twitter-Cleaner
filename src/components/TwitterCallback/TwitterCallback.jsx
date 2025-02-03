@@ -1,32 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { validateOAuthState, getStoredCodeVerifier, storeToken } from '../../config/twitter';
+import { validateOAuthState, getStoredCodeVerifier, storeToken, TWITTER_CONFIG } from '../../config/twitter';
 
 const Card = ({ className = '', ...props }) => (
   <div
-    className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}
+    className={`bg-white rounded-xl border shadow-sm ${className}`}
     {...props}
   />
-);
-
-const CardContent = ({ className = '', ...props }) => (
-  <div className={`p-6 pt-0 ${className}`} {...props} />
 );
 
 const Alert = ({ children, variant = 'default', className = '', ...props }) => (
   <div
     className={`rounded-lg border p-4 ${
-      variant === 'destructive' ? 'border-red-200 bg-red-50' : ''
+      variant === 'destructive' ? 'border-red-200 bg-red-50 text-red-800' : 
+      variant === 'success' ? 'border-green-200 bg-green-50 text-green-800' : ''
     } ${className}`}
     {...props}
   >
-    {children}
-  </div>
-);
-
-const AlertDescription = ({ children, className = '', ...props }) => (
-  <div className={`text-sm [&_p]:leading-relaxed ${className}`} {...props}>
     {children}
   </div>
 );
@@ -36,15 +27,15 @@ const TwitterCallback = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const handleCallback = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const state = params.get('state');
-      const error = params.get('error');
-      
       try {
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
+        const error = searchParams.get('error');
+        
         if (error) {
           throw new Error(
             error === 'access_denied' 
@@ -58,13 +49,13 @@ const TwitterCallback = () => {
         }
 
         // Validate OAuth state
-        const isValidState = await validateOAuthState(state);
+        const isValidState = validateOAuthState(state);
         if (!isValidState) {
           throw new Error('Invalid state parameter. Please try logging in again.');
         }
 
         // Get stored code verifier
-        const codeVerifier = await getStoredCodeVerifier();
+        const codeVerifier = getStoredCodeVerifier();
         if (!codeVerifier) {
           throw new Error('Missing authentication data. Please try logging in again.');
         }
@@ -72,24 +63,27 @@ const TwitterCallback = () => {
         setStatus('Exchanging authentication code...');
 
         // Exchange code for token
-        const response = await fetch('/api/auth/token', {
+        const tokenResponse = await fetch(TWITTER_CONFIG.tokenUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: JSON.stringify({
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
             code,
+            redirect_uri: TWITTER_CONFIG.redirectUri,
             code_verifier: codeVerifier,
-            redirect_uri: window.location.origin + '/callback'
+            client_id: TWITTER_CONFIG.clientId
           }),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        if (!tokenResponse.ok) {
+          const errorData = await tokenResponse.json().catch(() => ({}));
+          console.error('Token exchange error:', errorData);
+          throw new Error(errorData.error_description || `Failed to authenticate: ${tokenResponse.status}`);
         }
 
-        const tokenData = await response.json();
+        const tokenData = await tokenResponse.json();
         
         setStatus('Securing your session...');
         await storeToken(tokenData);
@@ -111,33 +105,36 @@ const TwitterCallback = () => {
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6 space-y-4">
-          {error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-center text-[#536471]">{status}</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
-                  <p className="text-center text-[#536471]">{status}</p>
-                </div>
-              )}
+      <Card className="w-full max-w-md p-6">
+        {error ? (
+          <Alert variant="destructive" className="flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-medium mb-1">Authentication Failed</h3>
+              <p className="text-sm">{error}</p>
+              <p className="text-sm mt-2">Redirecting you back...</p>
             </div>
-          )}
-        </CardContent>
+          </Alert>
+        ) : (
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />
+                <p className="text-center text-gray-600">{status}</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
+                <p className="text-center text-gray-600">{status}</p>
+                <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );

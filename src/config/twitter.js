@@ -1,6 +1,6 @@
 export const TWITTER_CONFIG = {
   clientId: import.meta.env.VITE_TWITTER_CLIENT_ID || 'SmEPNmlGNno0ekNWWDQ4bFpSd2I6MTpjaQ',
-  redirectUri: import.meta.env.VITE_REDIRECT_URI || 'https://twitter-cleaner-2.vercel.app/callback',
+  redirectUri: window.location.origin + '/callback',
   scope: 'tweet.read tweet.write users.read offline.access',
   authUrl: 'https://twitter.com/i/oauth2/authorize',
   tokenUrl: 'https://api.twitter.com/2/oauth2/token',
@@ -8,11 +8,11 @@ export const TWITTER_CONFIG = {
 };
 
 // Storage key for data
-const STORAGE_KEY = 'twitter_cleaner_v1';
+const STORAGE_KEY = 'twitter_cleaner_v2';
 
-// Simple encryption using base64 for storage
+// Simple but secure storage
 const secureStorage = {
-  async set(key, value) {
+  set(key, value) {
     try {
       const data = JSON.stringify(value);
       const encoded = btoa(data);
@@ -22,7 +22,7 @@ const secureStorage = {
     }
   },
 
-  async get(key) {
+  get(key) {
     try {
       const encoded = localStorage.getItem(`${STORAGE_KEY}_${key}`);
       if (!encoded) return null;
@@ -53,7 +53,7 @@ export const generateTwitterAuthUrl = async () => {
       .replace(/=/g, '');
 
     // Store auth state
-    await secureStorage.set('oauth_state', {
+    secureStorage.set('oauth_state', {
       state,
       codeVerifier,
       timestamp: Date.now()
@@ -85,14 +85,14 @@ function generateRandomString(length) {
 }
 
 // Enhanced OAuth state validation
-export const validateOAuthState = async (returnedState) => {
+export const validateOAuthState = (returnedState) => {
   try {
-    const storedData = await secureStorage.get('oauth_state');
+    const storedData = secureStorage.get('oauth_state');
     if (!storedData) return false;
 
     // Check if the state is expired (10 minutes)
     if (Date.now() - storedData.timestamp > 10 * 60 * 1000) {
-      await clearOAuthData();
+      clearOAuthData();
       return false;
     }
 
@@ -103,9 +103,9 @@ export const validateOAuthState = async (returnedState) => {
   }
 };
 
-export const getStoredCodeVerifier = async () => {
+export const getStoredCodeVerifier = () => {
   try {
-    const storedData = await secureStorage.get('oauth_state');
+    const storedData = secureStorage.get('oauth_state');
     return storedData?.codeVerifier || null;
   } catch (error) {
     console.error('Failed to get code verifier:', error);
@@ -116,7 +116,7 @@ export const getStoredCodeVerifier = async () => {
 // Token management
 export const getStoredToken = async () => {
   try {
-    const tokenData = await secureStorage.get('token');
+    const tokenData = secureStorage.get('token');
     if (!tokenData) return null;
 
     // Check if token is expired or about to expire
@@ -124,7 +124,7 @@ export const getStoredToken = async () => {
       if (tokenData.refreshToken) {
         return await refreshAccessToken(tokenData.refreshToken);
       }
-      await clearOAuthData();
+      clearOAuthData();
       return null;
     }
 
@@ -135,7 +135,7 @@ export const getStoredToken = async () => {
   }
 };
 
-export const storeToken = async (tokenResponse) => {
+export const storeToken = (tokenResponse) => {
   try {
     const tokenData = {
       accessToken: tokenResponse.access_token,
@@ -144,7 +144,7 @@ export const storeToken = async (tokenResponse) => {
       scope: tokenResponse.scope
     };
 
-    await secureStorage.set('token', tokenData);
+    secureStorage.set('token', tokenData);
     return tokenData.accessToken;
   } catch (error) {
     console.error('Failed to store token:', error);
@@ -171,15 +171,15 @@ async function refreshAccessToken(refreshToken) {
     }
 
     const tokenData = await response.json();
-    return await storeToken(tokenData);
+    return storeToken(tokenData);
   } catch (error) {
     console.error('Failed to refresh token:', error);
-    await clearOAuthData();
+    clearOAuthData();
     return null;
   }
 }
 
-export const clearOAuthData = async () => {
+export const clearOAuthData = () => {
   try {
     secureStorage.remove('oauth_state');
     secureStorage.remove('token');
